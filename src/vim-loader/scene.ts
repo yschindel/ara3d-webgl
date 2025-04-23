@@ -1,42 +1,26 @@
-/**
- * @module vim-loader
- */
-
 import * as THREE from 'three'
 import { Mesh } from './mesh'
-import { SceneBuilder } from './sceneBuilder'
-import { Vim } from './vim'
-import { estimateBytesUsed } from 'three/examples/jsm/utils/BufferGeometryUtils'
 import { SignalDispatcher } from 'ste-signals'
 import { SubMesh } from './subMesh'
 
 /**
  * A Scene regroups many Meshes
- * It keep tracks of the global bounding box as Meshes are added
- * It keeps a map from g3d instance indices to Meshes and vice versa
+ * It tracks the global bounding box as Meshes are added
+ * It keeps a map from instance indices to Meshes and vice versa
  */
 export class Scene {
-  // Dependencies
-  readonly builder: SceneBuilder
-
-  // State
   meshes: Mesh[] = []
-  private _vim: Vim | undefined
   private _matrix = new THREE.Matrix4()
   private _updated: boolean = false
   private _outlineCount: number = 0
 
   private _boundingBox: THREE.Box3
   private _instanceToMeshes: Map<number, SubMesh[]> = new Map()
-  private _material: THREE.Material | undefined
+  private _materialOverride: THREE.Material | undefined
 
   private _onUpdate = new SignalDispatcher()
   get onUpdate () {
     return this._onUpdate.asEvent()
-  }
-
-  constructor (builder: SceneBuilder | undefined) {
-    this.builder = builder
   }
 
   get updated () {
@@ -72,12 +56,6 @@ export class Scene {
     return this._boundingBox ? target.copy(this._boundingBox) : undefined
   }
 
-  getEstimatedMemoryUsed () {
-    return this.meshes
-      .map((m) => estimateBytesUsed(m.mesh.geometry))
-      .reduce((n1, n2) => n1 + n2, 0)
-  }
-
   /**
    * Returns the THREE.Mesh in which this instance is represented along with index
    * For merged mesh, index refers to submesh index
@@ -100,19 +78,7 @@ export class Scene {
     this._boundingBox?.applyMatrix4(this._matrix)
   }
 
-  get vim () {
-    return this._vim
-  }
-
-  /**
-   * Sets vim index for this scene and all its THREE.Meshes.
-   */
-  set vim (value: Vim) {
-    this._vim = value
-    this.meshes.forEach((m) => (m.vim = value))
-  }
-
-  /**
+   /**
    * Add an instanced mesh to the Scene and recomputes fields as needed.
    * param mesh Is expected to have:
    * userData.instances = number[] (indices of the g3d instances that went into creating the mesh)
@@ -165,18 +131,18 @@ export class Scene {
   /**
    * Gets the current material override or undefined if none.
    */
-  get material () {
-    return this._material
+  get materialOverride () {
+    return this._materialOverride
   }
 
   /**
-   * Sets and apply a material override to the scene, set to undefined to remove override.
+   * Sets and apply a material override to the scene, undefined will remove override.
    */
-  set material (value: THREE.Material | undefined) {
-    if (this._material === value) return
+  set materialOverride (value: THREE.Material | undefined) {
+    if (this._materialOverride === value) return
     this.updated = true
-    this._material = value
-    this.meshes.forEach((m) => m.setMaterial(value))
+    this._materialOverride = value
+    this.meshes.forEach((m) => m.setOverrideMaterial(value))
   }
 
   /**

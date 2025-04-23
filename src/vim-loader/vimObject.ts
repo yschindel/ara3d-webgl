@@ -1,7 +1,3 @@
-/**
- * @module vim-loader
- */
-
 // External
 import * as THREE from 'three'
 
@@ -10,13 +6,13 @@ import { Geometry } from './geometry'
 import { Vim } from './vim'
 import { VimDocument, IElement, VimHelpers } from 'vim-format'
 import { ObjectAttribute, ColorAttribute } from './objectAttributes'
-
 import { SubMesh } from './subMesh'
+import { MeshFactory } from './meshFactory'
 
 /**
  * High level api to interact with the loaded vim geometry and data.
  */
-export class Object {
+export class VimObject {
   vim: Vim
   document: VimDocument
   element: number
@@ -75,10 +71,6 @@ export class Object {
     )
 
     this.colorAttribute = new ColorAttribute(meshes, undefined, vim)
-  }
-
-  private get meshBuilder () {
-    return this.vim.scene.builder.meshBuilder
   }
 
   /**
@@ -221,7 +213,7 @@ export class Object {
   createWireframe () {
     if (!this.instances || !this.vim.g3d) return
 
-    const wireframe = this.meshBuilder.createWireframe(
+    const wireframe = MeshFactory.createWireframe(
       this.vim.g3d,
       this.instances
     )

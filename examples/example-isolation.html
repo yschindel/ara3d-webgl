@@ -27,7 +27,7 @@
     viewer.camera.lerp(1).frame(obj)
 
     // Override scene material with the isolation material which shows hidden object as ghosts
-    vim.scene.material = viewer.materials.isolation
+    vim.scene.materialOverride = viewer.materials.isolation
   }
 
   runExample()

@@ -3,7 +3,7 @@
  */
 
 import { Camera } from './camera'
-import { Object } from '../../index'
+import { VimObject } from '../../index'
 import * as THREE from 'three'
 
 export abstract class CameraMovement {
@@ -62,17 +62,17 @@ export abstract class CameraMovement {
     this.orbit(angle)
   }
 
-  abstract target(target: Object | THREE.Vector3): void
+  abstract target(target: VimObject | THREE.Vector3): void
 
   abstract reset(): void
 
   abstract set(position: THREE.Vector3, target?: THREE.Vector3)
 
   frame (
-    target: Object | THREE.Sphere | THREE.Box3 | 'all' | undefined,
+    target: VimObject | THREE.Sphere | THREE.Box3 | 'all' | undefined,
     forward?: THREE.Vector3
   ): void {
-    if (target instanceof Object) {
+    if (target instanceof VimObject) {
       target = target.getBoundingBox()
     }
     if (target === 'all') {

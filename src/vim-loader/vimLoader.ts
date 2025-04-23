@@ -1,12 +1,5 @@
-/**
- * @module vim-loader
- */
-
-import { SceneBuilder } from './sceneBuilder'
+import { SceneFactory } from './sceneFactory'
 import { BFast, G3d, RemoteBuffer, requestHeader, VimDocument, VimHeader } from 'vim-format'
-
-import { VimMaterials } from '../materials/materials'
-import { MeshBuilder } from './meshBuilder'
 import { ElementMapping } from './elementMapping'
 import { Vim } from './vim'
 import * as THREE from 'three'
@@ -22,15 +15,8 @@ export type VimSettings = {
  * Loader for the Vim File format.
  * See https://github.com/vimaec/vim
  */
-export class VimLoader {
-  readonly sceneBuilder: SceneBuilder
-  readonly meshBuilder: MeshBuilder
-
-  constructor () {
-    this.meshBuilder = new MeshBuilder(VimMaterials.getInstance())
-    this.sceneBuilder = new SceneBuilder(this.meshBuilder)
-  }
-
+export class VimLoader
+{
   static readonly defaultSettings: VimSettings = {
       rotation: new THREE.Vector3(270, 0, 0),
       scale: 1,
@@ -59,7 +45,7 @@ export class VimLoader {
       doc.node.getAllElementIndex(),
       doc.element.getAllId()
     ])
-    const scene = this.sceneBuilder.createFromG3d(g3d)
+    const scene = SceneFactory.createFromG3d(g3d)
     const mapping = new ElementMapping(
       Array.from(g3d.instanceNodes),
       instanceToElement!,

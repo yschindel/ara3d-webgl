@@ -1,28 +1,12 @@
-/**
- * @module vim-loader
- */
-
 import * as THREE from 'three'
 import { G3d, MeshSection } from 'vim-format'
 import { Geometry, MergeArgs } from './geometry'
-import { VimMaterials } from '../materials/materials'
+import { Materials } from '../materials/materials'
 import { Mesh } from './mesh'
 
-/**
- * Builds meshes from the g3d and BufferGeometry
- * Allows to reuse the same material for all new built meshes
- */
-export class MeshBuilder {
-  readonly materials: VimMaterials
-
-  constructor (materials?: VimMaterials) {
-    this.materials = materials ?? new VimMaterials()
-  }
-
-  /**
-   * Creates Instanced Meshes from the g3d data
-   */
-  createInstancedMeshes (g3d: G3d) {
+export class MeshFactory
+{
+  static createInstancedMeshes (g3d: G3d) {
     const result: (Mesh | undefined)[] = []
 
     for (let mesh = 0; mesh < g3d.getMeshCount(); mesh++) {
@@ -56,17 +40,16 @@ export class MeshBuilder {
 
   /**
    * Creates a InstancedMesh from g3d data and given instance indices
-   * @returns a THREE.InstancedMesh
    */
-  createInstancedMesh (
+  static createInstancedMesh (
     geometry: THREE.BufferGeometry,
     g3d: G3d,
     instances: number[],
     useAlpha: boolean
   ) {
     const material = useAlpha
-      ? this.materials.transparent
-      : this.materials.opaque
+      ? Materials.getInstance().transparent
+      : Materials.getInstance().opaque
 
     const mesh = new THREE.InstancedMesh(
       geometry,
@@ -88,15 +71,15 @@ export class MeshBuilder {
   /**
    * Create a merged mesh from g3d instance indices
    */
-  createMergedMesh (g3d: G3d, args: MergeArgs) {
+  static createMergedMesh (g3d: G3d, args: MergeArgs) {
     const merge = args.instances
       ? Geometry.mergeInstanceMeshes(g3d, args)
       : Geometry.mergeUniqueMeshes(g3d, args)
     if (!merge) return
 
     const material = args.transparent
-      ? this.materials.transparent
-      : this.materials.opaque
+      ? Materials.getInstance().transparent
+      : Materials.getInstance().opaque
 
     const mesh = new THREE.Mesh(merge.geometry, material.material)
     const nodes = merge.instances.map((i) => g3d.instanceNodes[i])
@@ -106,13 +89,13 @@ export class MeshBuilder {
   /**
    * Create a wireframe mesh from g3d instance indices
    */
-  createWireframe (g3d: G3d, instances: number[]) {
+  static createWireframe (g3d: G3d, instances: number[]) {
     const geometry = Geometry.createGeometryFromInstances(g3d, {
       section: 'all',
       transparent: false,
       instances })
     if (!geometry) return
     const wireframe = new THREE.WireframeGeometry(geometry)
-    return new THREE.LineSegments(wireframe, this.materials.wireframe)
+    return new THREE.LineSegments(wireframe, Materials.getInstance().wireframe)
   }
 }

@@ -10,20 +10,12 @@ import {
 
 export type MergeArgs = {
   section: MeshSection
-  instances: number[]
   transparent: boolean
 }
 
 export namespace Transparency
 {
   export type Mode = 'opaqueOnly' | 'transparentOnly' | 'allAsOpaque' | 'all'
-
-  export function isValid (value: string | undefined | null): value is Mode {
-    if (!value) return false
-    return ['all', 'opaqueOnly', 'transparentOnly', 'allAsOpaque'].includes(
-      value
-    )
-  }
 }
 
 export namespace Geometry {
@@ -210,19 +202,6 @@ export namespace Geometry {
     let vertexCount = 0
     let indexCount = 0
     const instancesFiltered = []
-
-    for (let i = 0; i < args.instances.length; i++) {
-      const instance = args.instances[i]
-      const mesh = g3d.instanceMeshes[instance]
-
-      const start = g3d.getMeshIndexStart(mesh, args.section)
-      const end = g3d.getMeshIndexEnd(mesh, args.section)
-      const count = end - start
-      if (count <= 0) continue
-      indexCount += count
-      vertexCount += g3d.getMeshVertexCount(mesh)
-      instancesFiltered.push(instance)
-    }
 
     return new MergeInfo(
       args.section,

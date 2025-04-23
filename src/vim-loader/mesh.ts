@@ -1,19 +1,12 @@
-/**
- * @module vim-loader
- */
-
 import * as THREE from 'three'
-import { Vim } from './vim'
 import { SubMesh } from './subMesh'
 
 /**
  * Wrapper around THREE.Mesh
- * Keeps track of what VIM instances are part of this mesh.
  * Is either merged on instanced.
  */
 export class Mesh {
   mesh: THREE.Mesh
-  vim: Vim | undefined
   merged: boolean
   instances: number[]
   subMeshes: number[]
@@ -28,7 +21,6 @@ export class Mesh {
     boxes: THREE.Box3[]
   ) {
     this.mesh = mesh
-    this.mesh.userData.vim = this
     this.instances = instance
     this.instanceBoxes = boxes
     this.boundingBox = this.unionAllBox(boxes)
@@ -57,9 +49,9 @@ export class Mesh {
   }
 
   /**
-   * Overrides mesh material, set to undefine to restore initial material.
+   * Overrides mesh material, set to undefined to restore initial material.
    */
-  setMaterial (value: THREE.Material) {
+  setOverrideMaterial (value: THREE.Material | undefined) {
     if (this._material === value) return
     if (this.ignoreSceneMaterial) return
 
@@ -76,16 +68,10 @@ export class Mesh {
     }
   }
 
-  /**
-   * Returns submesh for given index.
-   */
   getSubMesh (index: number) {
     return new SubMesh(this, index)
   }
 
-  /**
-   * Returns submesh corresponding to given face on a merged mesh.
-   */
   getSubmeshFromFace (faceIndex: number) {
     if (!this.merged) {
       throw new Error('Can only be called when mesh.merged = true')
@@ -94,10 +80,6 @@ export class Mesh {
     return new SubMesh(this, index)
   }
 
-  /**
-   *
-   * @returns Returns all submeshes
-   */
   getSubMeshes () {
     return this.instances.map((s, i) => new SubMesh(this, i))
   }

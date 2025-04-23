@@ -1,16 +1,11 @@
-/**
- * @module vim-loader
- */
-
 import * as THREE from 'three'
 import { VimDocument, G3d, VimHeader } from 'vim-format'
 import { Scene } from './scene'
-import { Object } from './object'
+import { VimObject } from './vimObject'
 import {
   ElementMapping,
   ElementNoMapping
 } from './elementMapping'
-import { ISignal, SignalDispatcher } from 'ste-signals'
 import { SubMesh } from './subMesh'
 import { Matrix4 } from 'three'
 
@@ -26,13 +21,8 @@ export class Vim {
   readonly transform: Matrix4
 
   scene: Scene
-  private _elementToObject: Map<number, Object> = new Map<number, Object>()
+  private _elementToObject: Map<number, VimObject> = new Map<number, VimObject>()
   private _map: ElementMapping | ElementNoMapping
-
-  private _onDispose = new SignalDispatcher()
-  get onDispose () {
-    return this._onDispose as ISignal
-  }
 
   constructor (
     header: VimHeader | undefined,
@@ -46,54 +36,33 @@ export class Vim {
     this.document = document
     this.g3d = g3d
     this.scene = scene
-    this.scene.vim = this
     this.transform = transform
     this.scene.applyMatrix4(transform);
     this._map = map ?? new ElementNoMapping()
   }
 
-  /**
-   * Disposes of all resources.
-   */
   dispose () {
-    this._onDispose.dispatch()
-    this._onDispose.clear()
     this.scene.dispose()
   }
 
-  /**
-   * Returns vim matrix
-   */
   getMatrix () {
     return this.transform
   }
 
-  /**
-   * Returns vim object from given instance
-   * @param instance g3d instance index
-   */
-  getObjectFromInstance (instance: number) {
+  getVimObjectFromInstance (instance: number) {
     const element = this._map?.getElementFromInstance(instance)
     if (!element) return
     return this.getObjectFromElement(element)
   }
 
-  /**
-   * Returns an array of vim objects matching given vim element Id
-   * @param id vim element Id
-   */
   getObjectsFromElementId (id: number) {
     const elements = this._map.getElementsFromElementId(id)
     return elements
       ?.map((e) => this.getObjectFromElement(e))
-      .filter((o): o is Object => o !== undefined)
+      .filter((o): o is VimObject => o !== undefined)
   }
 
-  /**
-   * Returns vim object from given vim element index
-   * @param element vim element index
-   */
-  getObjectFromElement (element: number): Object | undefined {
+  getObjectFromElement (element: number): VimObject | undefined {
     if (!this.hasElement(element)) return
 
     if (this._elementToObject.has(element)) {
@@ -103,7 +72,7 @@ export class Vim {
     const instances = this.getInstancesFromElement(element)
     const meshes = this.getMeshesFromInstances(instances)
 
-    const result = new Object(this, element, instances, meshes)
+    const result = new VimObject(this, element, instances, meshes)
     this._elementToObject.set(element, result)
     return result
   }
@@ -112,7 +81,7 @@ export class Vim {
    * Returns an array with all vim objects strictly contained in given box.
    */
   getObjectsInBox (box: THREE.Box3) {
-    const result: Object[] = []
+    const result: VimObject[] = []
 
     for (const obj of this.getAllObjects()) {
       const b = obj.getBoundingBox()

@@ -1,9 +1,5 @@
-/**
- * @module viw-webgl-viewer
- */
-
 import * as THREE from 'three'
-import { Object } from '../vim-loader/object'
+import { VimObject } from '../vim-loader/vimObject'
 import { Mesh } from '../vim-loader/mesh'
 import { RenderScene } from './rendering/renderScene'
 import { Viewport } from './viewport'
@@ -20,11 +16,10 @@ export type ThreeIntersectionList = THREE.Intersection<
 export type ActionType = 'main' | 'double' | 'idle'
 export type ActionModifier = 'none' | 'shift' | 'ctrl'
 
-/**
- * Highlevel aggregate of information about a raycast result
- */
+// TODO: we could easily remove the VIM code and keep this relatively useful.
+
 export class RaycastResult {
-  object: Object | undefined
+  vimObject: VimObject | undefined
   intersections: ThreeIntersectionList
   firstHit: THREE.Intersection | undefined
 
@@ -32,12 +27,12 @@ export class RaycastResult {
     this.intersections = intersections
     const [hit, obj] = this.GetFirstVimHit(intersections)
     this.firstHit = hit
-    this.object = obj
+    this.vimObject = obj
   }
 
   private GetFirstVimHit (
     intersections: ThreeIntersectionList
-  ): [THREE.Intersection, Object] | [] {
+  ): [THREE.Intersection, VimObject] | [] {
     for (let i = 0; i < intersections.length; i++) {
       const obj = this.getVimObjectFromHit(intersections[i])
       if (obj?.visible) return [intersections[i], obj]
@@ -190,7 +185,7 @@ export class InputAction {
   }
 
   /**
-   * Raycast for VIM Ojbjects at current point. Can be computationally expensive. Lazy evaluation for performance.
+   * Raycast for VIM Objects at current point. Can be computationally expensive. Lazy evaluation for performance.
    */
   get raycast () {
     return (
@@ -202,6 +197,6 @@ export class InputAction {
    * Returns the object at current point. This can cause a computationally expensive raycast evaluation.
    */
   get object () {
-    return this.raycast.object
+    return this.raycast.vimObject
   }
 }

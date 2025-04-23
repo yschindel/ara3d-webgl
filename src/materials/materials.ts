@@ -36,17 +36,13 @@ export type MaterialSettings = {
 /**
  * Defines the materials to be used by the vim loader and allows for material injection.
  */
-export class VimMaterials {
+export class Materials {
   // eslint-disable-next-line no-use-before-define
-  static instance: VimMaterials
-
-  static createInstance (instance: VimMaterials) {
-    this.instance = instance
-  }
+  private static instance: Materials
 
   static getInstance () {
     if (!this.instance) {
-      this.instance = new VimMaterials()
+      this.instance = new Materials()
     }
     return this.instance
   }
@@ -132,9 +128,6 @@ export class VimMaterials {
     this._onUpdate.dispatch()
   }
 
-  /**
-   * Color intensity of focus effect on hover.
-   */
   get focusIntensity () {
     return this._focusIntensity
   }
@@ -147,9 +140,6 @@ export class VimMaterials {
     this._onUpdate.dispatch()
   }
 
-  /**
-   * Color of focus effect on hover.
-   */
   get focusColor () {
     return this._focusColor
   }
@@ -162,9 +152,6 @@ export class VimMaterials {
     this._onUpdate.dispatch()
   }
 
-  /**
-   * Default color for wireframe meshes.
-   */
   get wireframeColor () {
     return this.wireframe.color
   }
@@ -175,9 +162,6 @@ export class VimMaterials {
     this._onUpdate.dispatch()
   }
 
-  /**
-   * Default opacity for wireframe meshes.
-   */
   get wireframeOpacity () {
     return this.wireframe.opacity
   }
@@ -189,9 +173,6 @@ export class VimMaterials {
     this._onUpdate.dispatch()
   }
 
-  /**
-   * Applies clipping planes to all relevent materials
-   */
   get clippingPlanes () {
     return this._clippingPlanes
   }
@@ -293,7 +274,7 @@ export class VimMaterials {
   }
 
   /**
-   * Intensity of the the selection outline effect
+   * Intensity of the selection outline effect
    */
   get outlineIntensity () {
     return this.outline.strokeMultiplier

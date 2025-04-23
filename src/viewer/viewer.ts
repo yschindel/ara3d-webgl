@@ -40,6 +40,7 @@ export class Viewer {
   gizmoRectangle: GizmoRectangle
   grid: GizmoGrid
   materials: VimMaterials
+
   get camera () {
     return this._camera
   }
@@ -127,17 +128,8 @@ export class Viewer {
   // Calls render, and asks the framework to prepare the next frame
   private animate () {
     this._updateId = requestAnimationFrame(() => this.animate())
-    // Camera
     this.renderer.needsUpdate = this._camera.update(this._clock.getDelta())
-    // Rendering
     this.renderer.render()
-  }
-
-  /**
-   * Returns an array with all loaded vims.
-   */
-  get vims () {
-    return Array.from(this._vims)
   }
 
   add (vim: Vim, frameCamera = true) {
@@ -148,9 +140,7 @@ export class Viewer {
     const success = this.renderer.add(vim.scene)
     if (!success) {
       vim.dispose()
-      throw new Error(
-        'Could not load vim. Max geometry memory reached. Vim disposed.'
-      )
+      throw new Error('Could not load vim.')
     }
     this._vims.add(vim)
 
@@ -164,8 +154,6 @@ export class Viewer {
       this._camera.do(true).frame('all', this._camera.defaultForward)
       this._camera.save()
     }
-
-    this._onVimLoaded.dispatch()
   }
 
   /**
@@ -189,7 +177,7 @@ export class Viewer {
    * Unloads all vim from viewer.
    */
   clear () {
-    this.vims.forEach((v) => this.remove(v))
+    this._vims.forEach((v) => this.remove(v))
   }
 
   /**

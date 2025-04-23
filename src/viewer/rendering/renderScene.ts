@@ -1,7 +1,3 @@
-/**
- * @module viw-webgl-viewer/rendering
- */
-
 import * as THREE from 'three'
 import { Scene } from '../../vim-loader/scene'
 
@@ -14,14 +10,9 @@ export class RenderScene {
   // state
   private _scenes: Scene[] = []
   private _boundingBox: THREE.Box3 | undefined
-  private _memory: number = 0
 
   constructor () {
     this.scene = new THREE.Scene()
-  }
-
-  get estimatedMemory () {
-    return this._memory
   }
 
   /** Returns an array of all the scenes that were updated since last clearUpdateFlags */
@@ -83,7 +74,6 @@ export class RenderScene {
   clear () {
     this.scene.clear()
     this._boundingBox = undefined
-    this._memory = 0
   }
 
   private addScene (scene: Scene) {
@@ -94,9 +84,6 @@ export class RenderScene {
 
     this.updateBox(scene.getBoundingBox())
     scene.onUpdate.sub(() => this.updateBox(scene.getBoundingBox()))
-
-    // Memory
-    this._memory += scene.getEstimatedMemoryUsed()
   }
 
   private updateBox (box: THREE.Box3 | undefined) {
@@ -120,6 +107,5 @@ export class RenderScene {
           .map((s) => s.getBoundingBox())
           .reduce((b1, b2) => b1.union(b2))
         : undefined
-    this._memory -= scene.getEstimatedMemoryUsed()
   }
 }
