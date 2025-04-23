@@ -3,7 +3,7 @@
  */
 
 import * as THREE from 'three'
-import { VimMaterials } from '../../materials/materials'
+import { VimMaterials } from '../../materials/vimMaterials'
 import { Renderer } from './renderer'
 
 /**
@@ -55,7 +55,6 @@ export class RenderingSection {
     this.minZ.constant = -box.min.z
     this.box.copy(box)
     this._renderer.needsUpdate = true
-    this._renderer.temporarilySkipAntialias = true
   }
 
   /**

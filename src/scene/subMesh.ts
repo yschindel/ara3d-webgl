@@ -52,11 +52,4 @@ export class SubMesh {
       ? this.mesh.subMeshes[this.index + 1]
       : this.three.geometry.index!.count
   }
-
-  /**
-   * Returns vim object for this submesh.
-   */
-  get object() {
-    return this.mesh.vim.getVimObjectFromInstance(this.instance)
-  }
 }

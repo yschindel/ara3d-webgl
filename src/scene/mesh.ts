@@ -3,7 +3,7 @@ import { SubMesh } from './subMesh'
 
 /**
  * Wrapper around THREE.Mesh
- * Is either merged on instanced.
+ * It is either a merged mesh or an instanced mesh.
  */
 export class Mesh {
   mesh: THREE.Mesh
@@ -24,6 +24,7 @@ export class Mesh {
     this.instances = instance
     this.instanceBoxes = boxes
     this.boundingBox = this.unionAllBox(boxes)
+    mesh.userData.mesh = this
   }
 
   static createMerged (
@@ -72,7 +73,7 @@ export class Mesh {
     return new SubMesh(this, index)
   }
 
-  getSubmeshFromFace (faceIndex: number) {
+  getSubMeshFromFace (faceIndex: number) {
     if (!this.merged) {
       throw new Error('Can only be called when mesh.merged = true')
     }

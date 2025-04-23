@@ -1,7 +1,3 @@
-/**
- @module viw-webgl-viewer
-*/
-
 import * as THREE from 'three'
 
 // internal
@@ -39,7 +35,10 @@ export class Viewer {
   measure: IMeasure
   gizmoRectangle: GizmoRectangle
   grid: GizmoGrid
-  materials: VimMaterials
+
+  get materials() : VimMaterials {
+    return VimMaterials.getInstance()
+  }
 
   get camera () {
     return this._camera
@@ -73,8 +72,6 @@ export class Viewer {
   constructor (options?: PartialSettings) {
     this.settings = getSettings(options)
 
-    this.materials = VimMaterials.getInstance()
-
     const scene = new RenderScene()
     this.viewport = new Viewport(this.settings)
     this._camera = new Camera(scene, this.viewport, this.settings)
@@ -105,13 +102,13 @@ export class Viewer {
 
     this.sectionBox = new SectionBox(this)
 
-    this.grid = new GizmoGrid(this.renderer, this.materials)
+    this.grid = new GizmoGrid(this.renderer)
 
     this._environment = new Environment(this.settings)
     this._environment.getObjects().forEach((o) => this.renderer.add(o))
 
     // Input and Selection
-    this.selection = new Selection(this.materials)
+    this.selection = new Selection()
     this.raycaster = new Raycaster(
       this.viewport,
       this._camera,

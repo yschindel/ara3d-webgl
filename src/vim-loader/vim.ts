@@ -1,12 +1,12 @@
 import * as THREE from 'three'
 import { VimDocument, G3d, VimHeader } from 'vim-format'
-import { Scene } from './scene'
+import { Scene } from '../scene/scene'
 import { VimObject } from './vimObject'
 import {
   ElementMapping,
   ElementNoMapping
 } from './elementMapping'
-import { SubMesh } from './subMesh'
+import { SubMesh } from '../scene/subMesh'
 import { Matrix4 } from 'three'
 
 /**

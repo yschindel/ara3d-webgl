@@ -1,7 +1,7 @@
 import { G3d } from 'vim-format'
-import { MergeArgs } from './geometry'
+import { MergeArgs } from './geometryUtils'
 import { MeshFactory } from './meshFactory'
-import { Scene } from './scene'
+import { Scene } from '../scene/scene'
 
 /**
  * Creates meshes and returns them as a scene from a g3d.

@@ -36,13 +36,13 @@ export type MaterialSettings = {
 /**
  * Defines the materials to be used by the vim loader and allows for material injection.
  */
-export class Materials {
+export class VimMaterials {
   // eslint-disable-next-line no-use-before-define
-  private static instance: Materials
+  private static instance: VimMaterials
 
   static getInstance () {
     if (!this.instance) {
-      this.instance = new Materials()
+      this.instance = new VimMaterials()
     }
     return this.instance
   }

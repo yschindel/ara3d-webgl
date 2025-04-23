@@ -11,7 +11,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 
 import { Viewport } from '../viewport'
 import { RenderScene } from './renderScene'
-import { VimMaterials } from '../../materials/materials'
+import { VimMaterials } from '../../materials/vimMaterials'
 import { OutlinePass } from './outlinePass'
 import { MergePass } from './mergePass'
 import { TransferPass } from './transferPass'
@@ -59,7 +59,6 @@ export class RenderingComposer {
     renderer: THREE.WebGLRenderer,
     scene: RenderScene,
     viewport: Viewport,
-    materials: VimMaterials,
     camera: Camera
   ) {
     this._samples = renderer.capabilities.isWebGL2
@@ -67,7 +66,7 @@ export class RenderingComposer {
       : 0
     this._renderer = renderer
     this._scene = scene
-    this._materials = materials
+    this._materials = VimMaterials.getInstance()
     this._size = viewport.getSize()
 
     this._camera = camera.three
@@ -146,7 +145,7 @@ export class RenderingComposer {
     this._composer.addPass(this._fxaaPass)
 
     // Merge Outline with scene
-    this._mergePass = new MergePass(this._sceneTarget.texture, this._materials)
+    this._mergePass = new MergePass(this._sceneTarget.texture)
     this._mergePass.needsSwap = false
     this._composer.addPass(this._mergePass)
 

@@ -2,11 +2,11 @@
 import * as THREE from 'three'
 
 // Vim
-import { Geometry } from './geometry'
+import { GeometryUtils } from './geometryUtils'
 import { Vim } from './vim'
 import { VimDocument, IElement, VimHelpers } from 'vim-format'
 import { ObjectAttribute, ColorAttribute } from './objectAttributes'
-import { SubMesh } from './subMesh'
+import { SubMesh } from '../scene/subMesh'
 import { MeshFactory } from './meshFactory'
 
 /**
@@ -142,19 +142,6 @@ export class VimObject {
   }
 
   /**
-   * Internal - Replace this object meshes and apply color as needed.
-   */
-  updateMeshes (meshes: SubMesh[] | undefined) {
-    this._meshes = meshes
-    if (!meshes) return
-    this.vim.scene.updated = true
-    // if there was a color override reapply to new meshes.
-    if (this.color) {
-      this.color = this._color
-    }
-  }
-
-  /**
    * Returns Bim data for the element associated with this object.
    * Returns undefined if no associated bim
    */
@@ -228,7 +215,7 @@ export class VimObject {
   createGeometry () {
     if (!this.instances || !this.vim.g3d) return
 
-    const geometry = Geometry.createGeometryFromInstances(this.vim.g3d, {
+    const geometry = GeometryUtils.createGeometryFromInstances(this.vim.g3d, {
       section: 'all',
       transparent: false,
       instances: this.instances

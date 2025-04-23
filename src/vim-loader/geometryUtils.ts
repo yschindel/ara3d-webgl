@@ -11,6 +11,7 @@ import {
 export type MergeArgs = {
   section: MeshSection
   transparent: boolean
+  instances: number[]
 }
 
 export namespace Transparency
@@ -18,12 +19,12 @@ export namespace Transparency
   export type Mode = 'opaqueOnly' | 'transparentOnly' | 'allAsOpaque' | 'all'
 }
 
-export namespace Geometry {
+export namespace GeometryUtils {
   /**
    * Creates a BufferGeometry with all given instances merged
    */
   export function createGeometryFromInstances (g3d: G3d, args: MergeArgs) {
-    return Geometry.mergeInstanceMeshes(g3d, args)?.geometry
+    return GeometryUtils.mergeInstanceMeshes(g3d, args)?.geometry
   }
 
   /**

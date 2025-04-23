@@ -8,17 +8,17 @@ import { VimMaterials } from '../../index'
 import { MergeMaterial } from '../../materials/mergeMaterial'
 
 /**
- * Merges a source buffer into the the current write buffer.
+ * Merges a source buffer into the  current write buffer.
  */
 export class MergePass extends Pass {
   private _fsQuad: FullScreenQuad
   private _material: MergeMaterial
 
-  constructor (source: THREE.Texture, materials?: VimMaterials) {
+  constructor (source: THREE.Texture) {
     super()
 
     this._fsQuad = new FullScreenQuad()
-    this._material = materials?.merge ?? new MergeMaterial()
+    this._material = VimMaterials.getInstance().merge
     this._fsQuad.material = this._material.material
     this._material.sourceA = source
   }

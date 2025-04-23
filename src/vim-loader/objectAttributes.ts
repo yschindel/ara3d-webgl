@@ -1,11 +1,7 @@
-/**
- * @module vim-loader
- */
 
-// external
 import * as THREE from 'three'
 import { Vim } from './vim'
-import { SubMesh } from './subMesh'
+import { SubMesh } from '../scene/subMesh'
 
 export class ObjectAttribute<T> {
   value: T

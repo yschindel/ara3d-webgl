@@ -1,10 +1,11 @@
 import * as THREE from 'three'
 import { VimObject } from '../vim-loader/vimObject'
-import { Mesh } from '../vim-loader/mesh'
+import { Mesh } from '../scene/mesh'
 import { RenderScene } from './rendering/renderScene'
 import { Viewport } from './viewport'
 import { Camera } from './camera/camera'
 import { Renderer } from './rendering/renderer'
+import { SubMesh } from '../scene/subMesh'
 
 /**
  * Type alias for THREE intersection array
@@ -40,15 +41,18 @@ export class RaycastResult {
     return []
   }
 
-  private getVimObjectFromHit (hit: THREE.Intersection) {
-    const mesh = hit.object.userData.vim as Mesh
-    if (!mesh) return
-
-    const sub = mesh.merged
-      ? mesh.getSubmeshFromFace(hit.faceIndex)
+  public getVimObjectFromHit (hit: THREE.Intersection): VimObject {
+    const mesh = hit.object.userData.mesh as Mesh
+    if (!mesh) return undefined
+    const subMesh = mesh.merged
+      ? mesh.getSubMeshFromFace(hit.faceIndex)
       : mesh.getSubMesh(hit.instanceId)
+    if (!subMesh) return undefined
+    // TODO:
+    // Get the VIM Object from the subMesh.
+    // There was some code for getting VIM object
 
-    return sub.object
+    return undefined
   }
 
   // Convenience functions and mnemonics

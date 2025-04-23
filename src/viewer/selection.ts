@@ -1,9 +1,5 @@
-/**
- * @module viw-webgl-viewer
- */
-
 import * as THREE from 'three'
-import { Vim, Materials } from '../index'
+import { Vim, VimMaterials } from '../index'
 import { VimObject } from '../vim-loader/vimObject'
 import { SignalDispatcher } from 'ste-signals'
 
@@ -85,7 +81,7 @@ export class Selection {
     if (object) object.focused = true
     this._focusedObject = object
     this._lastFocusTime = new Date().getTime()
-    Materials.getInstance().focusIntensity = 0
+    VimMaterials.getInstance().focusIntensity = 0
   }
 
   /**
@@ -227,7 +223,7 @@ export class Selection {
     const time = new Date().getTime()
     const timeElapsed = time - this._lastFocusTime
     const focus = Math.min(timeElapsed / 100, 1)
-    Materials.getInstance().focusIntensity = focus / 2
+    VimMaterials.getInstance().focusIntensity = focus / 2
     this._animationId = requestAnimationFrame(() => this.animate())
   }
 }

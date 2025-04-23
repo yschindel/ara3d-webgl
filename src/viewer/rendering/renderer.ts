@@ -1,8 +1,8 @@
 import * as THREE from 'three'
-import { Scene } from '../../vim-loader/scene'
+import { Scene } from '../../scene/scene'
 import { Viewport } from '../viewport'
 import { RenderScene } from './renderScene'
-import { VimMaterials } from '../../materials/materials'
+import { VimMaterials } from '../../materials/vimMaterials'
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
 
 import { Camera } from '../camera/camera'
@@ -63,7 +63,6 @@ export class Renderer
       this.renderer,
       scene,
       viewport,
-      materials,
       camera
     )
     this._composer.onDemand = settings.rendering.onDemand

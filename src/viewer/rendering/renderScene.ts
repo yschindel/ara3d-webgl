@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Scene } from '../../vim-loader/scene'
+import { Scene } from '../../scene/scene'
 
 /**
  * Wrapper around the THREE scene that tracks bounding box and other information.
