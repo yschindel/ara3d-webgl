@@ -1,5 +1,12 @@
 import { SceneFactory } from './sceneFactory'
-import { BFast, G3d, RemoteBuffer, requestHeader, VimDocument, VimHeader } from 'vim-format'
+import {
+  BFast,
+  G3d,
+  RemoteBuffer,
+  requestHeader,
+  VimDocument,
+  VimHeader,
+} from 'vim-format'
 import { ElementMapping } from './elementMapping'
 import { Vim } from './vim'
 import * as THREE from 'three'

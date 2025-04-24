@@ -129,7 +129,19 @@ export class Viewer {
     this.renderer.render()
   }
 
-  add (vim: Vim, frameCamera = true) {
+  addGroup (group: THREE.Group) {
+    if (!this.renderer.add(group)) {
+      throw new Error("Could not load object")
+    }
+  }
+
+  add (vim: Vim | THREE.Group, frameCamera = true) {
+    if (vim instanceof THREE.Group)
+    {
+      this.addGroup(vim)
+      return
+    }
+
     if (this._vims.has(vim)) {
       throw new Error('Vim cannot be added again, unless removed first.')
     }

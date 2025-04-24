@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Basic Example</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<script type="module">
+  import * as ARA3D from '../src/index'
+  import * as THREE from 'three'
+
+  async function runExample() {
+    const viewer = new ARA3D.Viewer()
+    const material = ARA3D.Materials.
+
+    object = new THREE.Mesh( new THREE.SphereGeometry( 75, 20, 10 ), material );
+    object.position.set( - 300, 0, 200 );
+    scene.add( object );
+
+    object = new THREE.Mesh( new THREE.IcosahedronGeometry( 75, 1 ), material );
+    object.position.set( - 100, 0, 200 );
+    scene.add( object );
+
+    object = new THREE.Mesh( new THREE.OctahedronGeometry( 75, 2 ), material );
+    object.position.set( 100, 0, 200 );
+    scene.add( object );
+
+    object = new THREE.Mesh( new THREE.TetrahedronGeometry( 75, 0 ), material );
+    object.position.set( 300, 0, 200 );
+    scene.add( object );
+
+    //
+
+    object = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100, 4, 4 ), material );
+    object.position.set( - 300, 0, 0 );
+    scene.add( object );
+
+    object = new THREE.Mesh( new THREE.BoxGeometry( 100, 100, 100, 4, 4, 4 ), material );
+    object.position.set( - 100, 0, 0 );
+    scene.add( object );
+
+    object = new THREE.Mesh( new THREE.CircleGeometry( 50, 20, 0, Math.PI * 2 ), material );
+    object.position.set( 100, 0, 0 );
+    scene.add( object );
+
+    object = new THREE.Mesh( new THREE.RingGeometry( 10, 50, 20, 5, 0, Math.PI * 2 ), material );
+    object.position.set( 300, 0, 0 );
+    scene.add( object );    viewer.add(gltf)
+  }
+
+  runExample()
+</script>
+</body>
+</html>
