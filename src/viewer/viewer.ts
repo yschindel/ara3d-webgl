@@ -1,7 +1,3 @@
-/**
- @module viw-webgl-viewer
-*/
-
 import * as THREE from 'three'
 
 // internal
@@ -22,7 +18,7 @@ import { GizmoRectangle } from './gizmos/gizmoRectangle'
 // loader
 import { Vim } from '../vim-loader/vim'
 import { Renderer } from './rendering/renderer'
-import { GizmoGrid, VimMaterials } from '../index'
+import { GizmoGrid, Materials } from '../index'
 import { SignalDispatcher } from 'ste-signals'
 
 /**
@@ -39,7 +35,11 @@ export class Viewer {
   measure: IMeasure
   gizmoRectangle: GizmoRectangle
   grid: GizmoGrid
-  materials: VimMaterials
+
+  get materials() : Materials {
+    return Materials.getInstance()
+  }
+
   get camera () {
     return this._camera
   }
@@ -72,8 +72,6 @@ export class Viewer {
   constructor (options?: PartialSettings) {
     this.settings = getSettings(options)
 
-    this.materials = VimMaterials.getInstance()
-
     const scene = new RenderScene()
     this.viewport = new Viewport(this.settings)
     this._camera = new Camera(scene, this.viewport, this.settings)
@@ -104,13 +102,13 @@ export class Viewer {
 
     this.sectionBox = new SectionBox(this)
 
-    this.grid = new GizmoGrid(this.renderer, this.materials)
+    this.grid = new GizmoGrid(this.renderer)
 
     this._environment = new Environment(this.settings)
     this._environment.getObjects().forEach((o) => this.renderer.add(o))
 
     // Input and Selection
-    this.selection = new Selection(this.materials)
+    this.selection = new Selection()
     this.raycaster = new Raycaster(
       this.viewport,
       this._camera,
@@ -127,20 +125,23 @@ export class Viewer {
   // Calls render, and asks the framework to prepare the next frame
   private animate () {
     this._updateId = requestAnimationFrame(() => this.animate())
-    // Camera
     this.renderer.needsUpdate = this._camera.update(this._clock.getDelta())
-    // Rendering
     this.renderer.render()
   }
 
-  /**
-   * Returns an array with all loaded vims.
-   */
-  get vims () {
-    return Array.from(this._vims)
+  addObject (object: THREE.Object3D) {
+    if (!this.renderer.add(object)) {
+      throw new Error("Could not load object")
+    }
   }
 
-  add (vim: Vim, frameCamera = true) {
+  add (vim: Vim | THREE.Object3D, frameCamera = true) {
+    if (vim instanceof THREE.Object3D)
+    {
+      this.addObject(vim)
+      return
+    }
+
     if (this._vims.has(vim)) {
       throw new Error('Vim cannot be added again, unless removed first.')
     }
@@ -148,9 +149,7 @@ export class Viewer {
     const success = this.renderer.add(vim.scene)
     if (!success) {
       vim.dispose()
-      throw new Error(
-        'Could not load vim. Max geometry memory reached. Vim disposed.'
-      )
+      throw new Error('Could not load vim.')
     }
     this._vims.add(vim)
 
@@ -164,8 +163,6 @@ export class Viewer {
       this._camera.do(true).frame('all', this._camera.defaultForward)
       this._camera.save()
     }
-
-    this._onVimLoaded.dispatch()
   }
 
   /**
@@ -189,7 +186,7 @@ export class Viewer {
    * Unloads all vim from viewer.
    */
   clear () {
-    this.vims.forEach((v) => this.remove(v))
+    this._vims.forEach((v) => this.remove(v))
   }
 
   /**

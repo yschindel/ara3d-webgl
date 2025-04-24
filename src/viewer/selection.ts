@@ -1,10 +1,6 @@
-/**
- * @module viw-webgl-viewer
- */
-
 import * as THREE from 'three'
-import { Vim, VimMaterials } from '../index'
-import { Object } from '../vim-loader/object'
+import { Vim, Materials } from '../index'
+import { VimObject } from '../vim-loader/vimObject'
 import { SignalDispatcher } from 'ste-signals'
 
 /**
@@ -12,12 +8,9 @@ import { SignalDispatcher } from 'ste-signals'
  * Supports multi-selection as long as all objects are from the same vim.
  */
 export class Selection {
-  // dependencies
-  private _materials: VimMaterials
-
   // State
-  private _objects = new Set<Object>()
-  private _focusedObject: Object | undefined
+  private _objects = new Set<VimObject>()
+  private _focusedObject: VimObject | undefined
   private _vim: Vim | undefined
   private _lastFocusTime: number = new Date().getTime()
   private _animationId: number = -1
@@ -26,8 +19,7 @@ export class Selection {
   private _onValueChanged = new SignalDispatcher()
   private _unsub: (() => void)[] = []
 
-  constructor (materials: VimMaterials) {
-    this._materials = materials
+  constructor() {
     this.animate()
   }
 
@@ -82,23 +74,23 @@ export class Selection {
    * Adds focus highlight to a single object.
    * Pass undefined to remove highlight
    */
-  focus (object: Object | undefined) {
+  focus (object: VimObject | undefined) {
     if (this._focusedObject === object) return
 
     if (this._focusedObject) this._focusedObject.focused = false
     if (object) object.focused = true
     this._focusedObject = object
     this._lastFocusTime = new Date().getTime()
-    this._materials.focusIntensity = 0
+    Materials.getInstance().focusIntensity = 0
   }
 
   /**
    * Select given objects and unselect all other objects
    * using no or undefined as argument will clear selection.
    */
-  select (object: Object | Object[] | undefined) {
+  select (object: VimObject | VimObject[] | undefined) {
     object =
-      object === undefined ? [] : object instanceof Object ? [object] : object
+      object === undefined ? [] : object instanceof VimObject ? [object] : object
 
     object = object.filter((o) => o)
     if (
@@ -124,7 +116,7 @@ export class Selection {
   /**
    * Returns true if given object is currently selected
    */
-  has (object: Object) {
+  has (object: VimObject) {
     return this._objects.has(object)
   }
 
@@ -138,7 +130,7 @@ export class Selection {
   /**
    * Adds given objects to the current selection
    */
-  add (...objects: Object[]) {
+  add (...objects: VimObject[]) {
     if (!objects) return
     if (objects.length === 0) return
     const count = this._objects.size
@@ -156,7 +148,7 @@ export class Selection {
   /**
    * Remove given objects from the current selection
    */
-  remove (...objects: Object[]) {
+  remove (...objects: VimObject[]) {
     if (!objects) return
     if (objects.length === 0) return
     const count = this._objects.size
@@ -176,7 +168,7 @@ export class Selection {
    * Adds unselected elements of given objects to the selection
    * Remove selected elements of given objects from the selection
    */
-  toggle (...objects: Object[]) {
+  toggle (...objects: VimObject[]) {
     if (!objects) return
     if (objects.length === 0) return
     const count = this._objects.size
@@ -231,7 +223,7 @@ export class Selection {
     const time = new Date().getTime()
     const timeElapsed = time - this._lastFocusTime
     const focus = Math.min(timeElapsed / 100, 1)
-    this._materials.focusIntensity = focus / 2
+    Materials.getInstance().focusIntensity = focus / 2
     this._animationId = requestAnimationFrame(() => this.animate())
   }
 }

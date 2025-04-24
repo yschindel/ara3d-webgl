@@ -5,8 +5,8 @@
 
 import * as THREE from 'three'
 import { InputHandler } from './inputHandler'
-import { InputAction } from '../raycaster'
 import { Viewer } from '../viewer'
+import { InputAction } from '../inputAction'
 
 type Button = 'main' | 'middle' | 'right' | undefined
 type Modifier = 'ctrl' | 'shift' | 'none'

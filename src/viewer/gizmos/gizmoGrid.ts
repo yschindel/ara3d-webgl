@@ -6,18 +6,18 @@ import { Float32BufferAttribute, Raycaster } from 'three'
 import * as THREE from 'three'
 import { createGridMaterial } from '../../materials/gridMaterial'
 import { Renderer } from '../rendering/renderer'
-import { Vim, VimMaterials } from '../../index'
+import { Vim, Materials } from '../../index'
 import { BoxOutline } from './sectionBox/sectionBoxGizmo'
 
 export class GizmoGrid {
-  private _renderer: Renderer
-  private _material: THREE.ShaderMaterial
+  private readonly _renderer: Renderer
+  private readonly _material: THREE.ShaderMaterial
   grid: Grid
   outline: BoxOutline
 
-  constructor (renderer: Renderer, materials: VimMaterials) {
+  constructor (renderer: Renderer) {
     this._renderer = renderer
-    this._material = materials.grid
+    this._material = Materials.getInstance().grid
   }
 
   init (target: Vim | THREE.Box3, scale: THREE.Vector3) {

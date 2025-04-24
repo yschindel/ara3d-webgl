@@ -3,7 +3,7 @@
  */
 
 import { CameraMovement } from './cameraMovement'
-import { Object } from '../../index'
+import { VimObject } from '../../index'
 import * as THREE from 'three'
 
 export class CameraMovementDo extends CameraMovement {
@@ -43,8 +43,8 @@ export class CameraMovementDo extends CameraMovement {
     this.set(this._camera.position, target)
   }
 
-  target (target: Object | THREE.Vector3): void {
-    const pos = target instanceof Object ? target.getCenter() : target
+  target (target: VimObject | THREE.Vector3): void {
+    const pos = target instanceof VimObject ? target.getCenter() : target
     if (!pos) return
     this.set(this._camera.position, pos)
   }
