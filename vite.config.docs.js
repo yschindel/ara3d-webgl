@@ -19,6 +19,8 @@ export default defineConfig({
         exampleOutline: resolve(__dirname, 'examples/example-outline.html'),
         exampleSectionBox: resolve(__dirname, 'examples/example-sectionbox.html'),
         exampleVisibility: resolve(__dirname, 'examples/example-visibility.html'),
+        exampleGeometry: resolve(__dirname, 'examples/example-geometry.html'),
+        exampleGltf: resolve(__dirname, 'examples/example-gltf-duck.html'),
       },
     }
   }

@@ -1,17 +1,16 @@
-import { V as Viewer, d as VimLoader } from "./vimLoader.55c78aa4.js";
+import { V as Viewer, o as Sphere, d as VimLoader } from "./GLTFLoader.19be2259.js";
 async function runExample() {
   const viewer = new Viewer();
   const loader = new VimLoader();
   const vim = await loader.load("/ara3d-webgl/residence.vim", console);
   viewer.add(vim);
   const all = [...vim.getAllObjects()].filter((o) => o.hasMesh);
+  const radius = all.map(
+    (o) => o.getBoundingBox().getBoundingSphere(new Sphere()).radius
+  );
   for (let i = 0; i < all.length; i++) {
-    const element = await all[i].getBimElement();
-    const name = element.familyName;
-    if (typeof name === "string" && name.includes("Window")) {
-      all[i].outline = true;
-    }
+    all[i].visible = radius[i] > 15;
   }
 }
 runExample();
-//# sourceMappingURL=exampleOutline.929defc1.js.map
+//# sourceMappingURL=exampleVisibility.16c7becb.js.map

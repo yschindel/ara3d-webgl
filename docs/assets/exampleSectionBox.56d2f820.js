@@ -1,4 +1,4 @@
-import { V as Viewer, d as VimLoader } from "./vimLoader.55c78aa4.js";
+import { V as Viewer, d as VimLoader } from "./GLTFLoader.19be2259.js";
 async function runExample() {
   const viewer = new Viewer();
   const loader = new VimLoader();
@@ -17,4 +17,4 @@ async function runExample() {
   viewer.selection.clear();
 }
 runExample();
-//# sourceMappingURL=exampleSectionBox.970987a1.js.map
+//# sourceMappingURL=exampleSectionBox.56d2f820.js.map

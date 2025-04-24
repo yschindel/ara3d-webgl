@@ -1,4 +1,4 @@
-import { V as Viewer, d as VimLoader } from "./vimLoader.55c78aa4.js";
+import { V as Viewer, d as VimLoader } from "./GLTFLoader.19be2259.js";
 async function runExample() {
   const viewer = new Viewer();
   const loader = new VimLoader();
@@ -11,7 +11,7 @@ async function runExample() {
   obj.visible = true;
   viewer.selection.select(obj);
   viewer.camera.lerp(1).frame(obj);
-  vim.scene.material = viewer.materials.isolation;
+  vim.scene.materialOverride = viewer.materials.isolation;
 }
 runExample();
-//# sourceMappingURL=exampleIsolation.f0061d54.js.map
+//# sourceMappingURL=exampleIsolation.dd56a305.js.map

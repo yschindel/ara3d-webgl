@@ -1,4 +1,4 @@
-import { V as Viewer, d as VimLoader, C as Color } from "./vimLoader.55c78aa4.js";
+import { V as Viewer, C as Color, d as VimLoader } from "./GLTFLoader.19be2259.js";
 async function runExample() {
   const viewer = new Viewer();
   const loader = new VimLoader();
@@ -21,4 +21,4 @@ async function runExample() {
   }
 }
 runExample();
-//# sourceMappingURL=exampleColors.67e02324.js.map
+//# sourceMappingURL=exampleColors.6285f096.js.map
