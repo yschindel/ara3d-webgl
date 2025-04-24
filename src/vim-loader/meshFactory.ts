@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { G3d, MeshSection } from 'vim-format'
 import { GeometryUtils, MergeArgs } from './geometryUtils'
-import { VimMaterials } from '../materials/vimMaterials'
+import { Materials } from '../materials/materials'
 import { Mesh } from '../scene/mesh'
 
 export class MeshFactory
@@ -48,8 +48,8 @@ export class MeshFactory
     useAlpha: boolean
   ) {
     const material = useAlpha
-      ? VimMaterials.getInstance().transparent
-      : VimMaterials.getInstance().opaque
+      ? Materials.getInstance().transparent
+      : Materials.getInstance().opaque
 
     const mesh = new THREE.InstancedMesh(
       geometry,
@@ -78,8 +78,8 @@ export class MeshFactory
     if (!merge) return
 
     const material = args.transparent
-      ? VimMaterials.getInstance().transparent
-      : VimMaterials.getInstance().opaque
+      ? Materials.getInstance().transparent
+      : Materials.getInstance().opaque
 
     const mesh = new THREE.Mesh(merge.geometry, material.material)
     const nodes = merge.instances.map((i) => g3d.instanceNodes[i])
@@ -96,6 +96,6 @@ export class MeshFactory
       instances })
     if (!geometry) return
     const wireframe = new THREE.WireframeGeometry(geometry)
-    return new THREE.LineSegments(wireframe, VimMaterials.getInstance().wireframe)
+    return new THREE.LineSegments(wireframe, Materials.getInstance().wireframe)
   }
 }

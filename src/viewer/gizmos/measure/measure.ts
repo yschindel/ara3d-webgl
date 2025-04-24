@@ -4,10 +4,10 @@
 
 import * as THREE from 'three'
 import { InputScheme } from '../../inputs/input'
-import { InputAction } from '../../raycaster'
 import { Viewer } from '../../viewer'
 import { MeasureFlow, MeasureStage } from './measureFlow'
 import { MeasureGizmo } from './measureGizmo'
+import { InputAction } from '../../inputAction'
 
 /**
  * Interacts with the measure tool.

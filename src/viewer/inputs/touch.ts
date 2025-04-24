@@ -1,11 +1,7 @@
-/**
- * @module viw-webgl-viewer/inputs
- */
-
 import * as THREE from 'three'
 import { InputHandler } from './inputHandler'
-import { InputAction } from '../raycaster'
 import { Viewer } from '../viewer'
+import { InputAction } from '../inputAction'
 
 /**
  * Manages user touch inputs.

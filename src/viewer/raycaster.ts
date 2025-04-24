@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { VimObject } from '../vim-loader/vimObject'
+import { Intersection } from 'three'
 import { Mesh } from '../scene/mesh'
 import { RenderScene } from './rendering/renderScene'
 import { Viewport } from './viewport'
@@ -17,45 +17,37 @@ export type ThreeIntersectionList = THREE.Intersection<
 export type ActionType = 'main' | 'double' | 'idle'
 export type ActionModifier = 'none' | 'shift' | 'ctrl'
 
-// TODO: we could easily remove the VIM code and keep this relatively useful.
-
 export class RaycastResult {
-  vimObject: VimObject | undefined
   intersections: ThreeIntersectionList
-  firstHit: THREE.Intersection | undefined
 
   constructor (intersections: ThreeIntersectionList) {
     this.intersections = intersections
-    const [hit, obj] = this.GetFirstVimHit(intersections)
-    this.firstHit = hit
-    this.vimObject = obj
   }
 
-  private GetFirstVimHit (
-    intersections: ThreeIntersectionList
-  ): [THREE.Intersection, VimObject] | [] {
-    for (let i = 0; i < intersections.length; i++) {
-      const obj = this.getVimObjectFromHit(intersections[i])
-      if (obj?.visible) return [intersections[i], obj]
-    }
-    return []
-  }
-
-  public getVimObjectFromHit (hit: THREE.Intersection): VimObject {
+  static getObjectIdFromHit (hit: THREE.Intersection): number {
+    if (!hit) return -1
     const mesh = hit.object.userData.mesh as Mesh
-    if (!mesh) return undefined
+    if (!mesh) return -1
     const subMesh = mesh.merged
       ? mesh.getSubMeshFromFace(hit.faceIndex)
       : mesh.getSubMesh(hit.instanceId)
-    if (!subMesh) return undefined
-    // TODO:
-    // Get the VIM Object from the subMesh.
-    // There was some code for getting VIM object
-
-    return undefined
+    if (!subMesh) return -1
+    if (subMesh instanceof SubMesh) {
+      const parent = subMesh.mesh
+      return parent.instances[subMesh.index]
+    }
+    return -1
   }
 
   // Convenience functions and mnemonics
+  get firstHit(): Intersection {
+    return this.intersections[0]
+  }
+
+  get objectId(): number {
+    return RaycastResult.getObjectIdFromHit(this.firstHit)
+  }
+
   get isHit (): boolean {
     return !!this.firstHit
   }
@@ -158,49 +150,3 @@ export class Raycaster {
   }
 }
 
-/**
- * Represents an input action with its position and modifiers.
- */
-export class InputAction {
-  readonly position: THREE.Vector2
-  readonly modifier: ActionModifier
-  readonly type: ActionType
-  private _raycaster: Raycaster
-
-  constructor (
-    type: ActionType,
-    modifier: ActionModifier,
-    position: THREE.Vector2,
-    raycaster: Raycaster
-  ) {
-    this.type = type
-    this.modifier = modifier
-    this.position = position
-    this._raycaster = raycaster
-  }
-
-  private _raycast: RaycastResult | undefined
-
-  /**
-   * Returns a raycaster that can be used for custom raycast.
-   */
-  get raycaster () {
-    return this._raycaster.fromPoint2(this.position)
-  }
-
-  /**
-   * Raycast for VIM Objects at current point. Can be computationally expensive. Lazy evaluation for performance.
-   */
-  get raycast () {
-    return (
-      this._raycast ?? (this._raycast = this._raycaster.raycast2(this.position))
-    )
-  }
-
-  /**
-   * Returns the object at current point. This can cause a computationally expensive raycast evaluation.
-   */
-  get object () {
-    return this.raycast.vimObject
-  }
-}

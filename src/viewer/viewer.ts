@@ -18,7 +18,7 @@ import { GizmoRectangle } from './gizmos/gizmoRectangle'
 // loader
 import { Vim } from '../vim-loader/vim'
 import { Renderer } from './rendering/renderer'
-import { GizmoGrid, VimMaterials } from '../index'
+import { GizmoGrid, Materials } from '../index'
 import { SignalDispatcher } from 'ste-signals'
 
 /**
@@ -36,8 +36,8 @@ export class Viewer {
   gizmoRectangle: GizmoRectangle
   grid: GizmoGrid
 
-  get materials() : VimMaterials {
-    return VimMaterials.getInstance()
+  get materials() : Materials {
+    return Materials.getInstance()
   }
 
   get camera () {
@@ -129,16 +129,16 @@ export class Viewer {
     this.renderer.render()
   }
 
-  addGroup (group: THREE.Group) {
-    if (!this.renderer.add(group)) {
+  addObject (object: THREE.Object3D) {
+    if (!this.renderer.add(object)) {
       throw new Error("Could not load object")
     }
   }
 
-  add (vim: Vim | THREE.Group, frameCamera = true) {
-    if (vim instanceof THREE.Group)
+  add (vim: Vim | THREE.Object3D, frameCamera = true) {
+    if (vim instanceof THREE.Object3D)
     {
-      this.addGroup(vim)
+      this.addObject(vim)
       return
     }
 

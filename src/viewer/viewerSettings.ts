@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import deepmerge from 'deepmerge'
 import { floor } from '../images'
 import { GizmoOptions } from './gizmos/gizmoAxes'
-import { MaterialSettings } from '../materials/vimMaterials'
+import { MaterialSettings } from '../materials/materials'
 
 export type TextureEncoding = 'url' | 'base64' | undefined
 export { GizmoOptions } from './gizmos/gizmoAxes'

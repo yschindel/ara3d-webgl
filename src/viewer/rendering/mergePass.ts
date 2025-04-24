@@ -4,7 +4,7 @@
 
 import THREE from 'three'
 import { FullScreenQuad, Pass } from 'three/examples/jsm/postprocessing/Pass'
-import { VimMaterials } from '../../index'
+import { Materials } from '../../index'
 import { MergeMaterial } from '../../materials/mergeMaterial'
 
 /**
@@ -18,7 +18,7 @@ export class MergePass extends Pass {
     super()
 
     this._fsQuad = new FullScreenQuad()
-    this._material = VimMaterials.getInstance().merge
+    this._material = Materials.getInstance().merge
     this._fsQuad.material = this._material.material
     this._material.sourceA = source
   }

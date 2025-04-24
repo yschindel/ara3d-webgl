@@ -9,15 +9,15 @@ export type { PointerMode, InputScheme } from './viewer/inputs/input'
 export { DefaultInputScheme, KEYS } from './viewer/inputs/input'
 export * from './viewer/viewerSettings'
 export {
-  RaycastResult as HitTestResult,
-  InputAction
+  RaycastResult as HitTestResult
 } from './viewer/raycaster'
 
 export * from './vim-loader/geometryUtils'
 export * from './vim-loader/vimLoader'
-export * from './materials/vimMaterials'
 export * from './vim-loader/meshFactory'
 export * from './vim-loader/vimObject'
-export * from './scene/scene'
 export * from './vim-loader/vim'
-export { GltfLoader } from './vim-loader/gltfLoader'
+export * from './vim-loader/gltfLoader'
+export * from './materials/materials'
+export * from './scene/scene'
+export { InputAction } from './viewer/inputAction'

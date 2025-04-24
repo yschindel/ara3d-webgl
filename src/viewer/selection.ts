@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Vim, VimMaterials } from '../index'
+import { Vim, Materials } from '../index'
 import { VimObject } from '../vim-loader/vimObject'
 import { SignalDispatcher } from 'ste-signals'
 
@@ -81,7 +81,7 @@ export class Selection {
     if (object) object.focused = true
     this._focusedObject = object
     this._lastFocusTime = new Date().getTime()
-    VimMaterials.getInstance().focusIntensity = 0
+    Materials.getInstance().focusIntensity = 0
   }
 
   /**
@@ -223,7 +223,7 @@ export class Selection {
     const time = new Date().getTime()
     const timeElapsed = time - this._lastFocusTime
     const focus = Math.min(timeElapsed / 100, 1)
-    VimMaterials.getInstance().focusIntensity = focus / 2
+    Materials.getInstance().focusIntensity = focus / 2
     this._animationId = requestAnimationFrame(() => this.animate())
   }
 }

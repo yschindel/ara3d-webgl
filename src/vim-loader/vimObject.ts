@@ -109,7 +109,6 @@ export class VimObject {
 
   /**
    * Toggles visibility of this object.
-   * @param value true to show object, false to hide object.
    */
   get visible () {
     return this.visibleAttribute.value

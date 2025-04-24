@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { Scene } from '../../scene/scene'
 import { Viewport } from '../viewport'
 import { RenderScene } from './renderScene'
-import { VimMaterials } from '../../materials/vimMaterials'
+import { Materials } from '../../materials/materials'
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
 
 import { Camera } from '../camera/camera'
@@ -22,7 +22,7 @@ export class Renderer
   private _viewport: Viewport
   private _camera: Camera
   private _composer: RenderingComposer
-  private _materials: VimMaterials
+  private _materials: Materials
   private _renderText: boolean | undefined
   private _needsUpdate: boolean
 
@@ -37,7 +37,7 @@ export class Renderer
   constructor (
     scene: RenderScene,
     viewport: Viewport,
-    materials: VimMaterials,
+    materials: Materials,
     camera: Camera,
     settings: Settings
   ) {

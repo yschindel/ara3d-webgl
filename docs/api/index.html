@@ -16,15 +16,20 @@
 <a href="#ara-3d-webgl-viewer" id="ara-3d-webgl-viewer" style="color: inherit; text-decoration: none;">
   <h1>Ara 3D WebGL Viewer</h1>
 </a>
-<p>A WebGL viewer for AEC models built on <a href="https://threejs.org">Three.JS</a> and forked from <a href="https://github.com/vimaec/vim-webgl-viewer">https://github.com/vimaec/vim-webgl-viewer</a>.</p>
+<p>A <strong>WebGL viewer</strong> for large 3D models of buildings and infrastructure built on <a href="https://threejs.org">Three.JS</a> and forked from <a href="https://github.com/vimaec/vim-webgl-viewer">VIM-WebGL-Viewer</a>.</p>
+<p>👉 Try a <a href="https://ara3d.github.io/ara3d-webgl">live demo</a>, watch a short <a href="https://www.youtube.com/watch?v=WUq6oUP684Y">video on YouTube</a>, or <a href="https://ara3d.github.io/ara3d-webgl/api">browse the API docs</a>.</p>
+<p><a href="https://www.youtube.com/watch?v=WUq6oUP684Y"><img src="https://img.youtube.com/vi/WUq6oUP684Y/0.jpg" alt="Ara 3D WebGL Viewer Demo"></a></p>
+<p>💬 We also welcome you to <a href="https://discord.gg/gr7UV9Mat8">join the conversation on Discord</a>.</p>
 
 <a href="#motivation" id="motivation" style="color: inherit; text-decoration: none;">
   <h2>Motivation</h2>
 </a>
-<p>At <a href="https://ara3d.com">Ara 3D</a> we, along with our partners and customers, needed 
-a simple open-source library to efficiently load and display large 3D BIM models in WebGL.</p>
-<p>We needed the viewer to be easy to customize for different use cases while providing 
-support for large numbers of similar objects, which is common in BIM models.</p>
+<p>At <a href="https://ara3d.com">Ara 3D</a> along with our partners and customers who develop technology for AECO (Architecture Engineering Construction and Owners) professionals needed 
+a simple open-source library to efficiently load and display large 3D BIM (Building Information Modeling) models in WebGL.</p>
+<blockquote>
+<p>&quot;It&#39;s incredibly enjoyable to work with—strikes the perfect balance between built-in functionality like highlighting and zoom-to-extent features, without feeling overly prescriptive. Outstanding work 🙌&quot; - <a href="https://www.linkedin.com/posts/louistrue_open-source-to-the-moon-just-created-activity-7311734789227638784-Lfrf">Louis Trümpler</a>. </p>
+</blockquote>
+<p>We needed the viewer to be easy to customize for different use cases while providing support for large numbers of similar objects, which is common in BIM models.</p>
 
 <a href="#why-this-viewer-and-not-another" id="why-this-viewer-and-not-another" style="color: inherit; text-decoration: none;">
   <h2>Why This Viewer and not Another?</h2>
@@ -242,13 +247,29 @@ commercial context. For more information reach out to us at <a href="mailto:info
 <li class="tsd-kind-namespace tsd-parent-kind-namespace tsd-is-external"><a href="modules/index.THREE.PropertyBinding.html">Property<wbr/>Binding</a></li>
 <li class="tsd-kind-namespace tsd-parent-kind-namespace tsd-is-external"><a href="modules/index.THREE.ShapeUtils.html">Shape<wbr/>Utils</a></li>
 <li class="tsd-kind-namespace tsd-parent-kind-namespace tsd-is-external"><a href="modules/index.THREE.UniformsUtils.html">Uniforms<wbr/>Utils</a></li></ul></li></ul></li>
+<li class="tsd-kind-module"><a href="modules/scene_mesh.html">scene/mesh</a></li>
+<li class="tsd-kind-module"><a href="modules/scene_scene.html">scene/scene</a></li>
+<li class="tsd-kind-module"><a href="modules/scene_subMesh.html">scene/sub<wbr/>Mesh</a></li>
 <li class="tsd-kind-module"><a href="modules/utils_ILogger.html">utils/ILogger</a></li>
+<li class="tsd-kind-module"><a href="modules/viewer_inputAction.html">viewer/input<wbr/>Action</a></li>
+<li class="tsd-kind-module"><a href="modules/viewer_inputs_touch.html">viewer/inputs/touch</a></li>
+<li class="tsd-kind-module"><a href="modules/viewer_raycaster.html">viewer/raycaster</a></li>
+<li class="tsd-kind-module"><a href="modules/viewer_rendering_renderScene.html">viewer/rendering/render<wbr/>Scene</a></li>
+<li class="tsd-kind-module"><a href="modules/viewer_rendering_renderer.html">viewer/rendering/renderer</a></li>
+<li class="tsd-kind-module"><a href="modules/viewer_selection.html">viewer/selection</a></li>
+<li class="tsd-kind-module"><a href="modules/viewer_viewer.html">viewer/viewer</a></li>
 <li class="tsd-kind-module"><a href="modules/vim_loader.html">vim-<wbr/>loader</a>
 <ul>
-<li class="tsd-kind-namespace tsd-parent-kind-module"><a href="modules/vim_loader.Geometry.html">Geometry</a></li>
+<li class="tsd-kind-namespace tsd-parent-kind-module"><a href="modules/vim_loader.GeometryUtils.html">Geometry<wbr/>Utils</a></li>
 <li class="tsd-kind-namespace tsd-parent-kind-module"><a href="modules/vim_loader.Transparency.html">Transparency</a></li></ul></li>
+<li class="tsd-kind-module"><a href="modules/vim_loader_gltfLoader.html">vim-<wbr/>loader/gltf<wbr/>Loader</a></li>
 <li class="tsd-kind-module"><a href="modules/vim_loader_materials.html">vim-<wbr/>loader/materials</a></li>
-<li class="tsd-kind-module"><a href="modules/vim_loader_subMesh.html">vim-<wbr/>loader/sub<wbr/>Mesh</a></li>
+<li class="tsd-kind-module"><a href="modules/vim_loader_meshFactory.html">vim-<wbr/>loader/mesh<wbr/>Factory</a></li>
+<li class="tsd-kind-module"><a href="modules/vim_loader_objectAttributes.html">vim-<wbr/>loader/object<wbr/>Attributes</a></li>
+<li class="tsd-kind-module"><a href="modules/vim_loader_sceneFactory.html">vim-<wbr/>loader/scene<wbr/>Factory</a></li>
+<li class="tsd-kind-module"><a href="modules/vim_loader_vim.html">vim-<wbr/>loader/vim</a></li>
+<li class="tsd-kind-module"><a href="modules/vim_loader_vimLoader.html">vim-<wbr/>loader/vim<wbr/>Loader</a></li>
+<li class="tsd-kind-module"><a href="modules/vim_loader_vimObject.html">vim-<wbr/>loader/vim<wbr/>Object</a></li>
 <li class="tsd-kind-module"><a href="modules/viw_webgl_viewer.html">viw-<wbr/>webgl-<wbr/>viewer</a></li>
 <li class="tsd-kind-module"><a href="modules/viw_webgl_viewer_camera.html">viw-<wbr/>webgl-<wbr/>viewer/camera</a></li>
 <li class="tsd-kind-module"><a href="modules/viw_webgl_viewer_gizmos.html">viw-<wbr/>webgl-<wbr/>viewer/gizmos</a></li>

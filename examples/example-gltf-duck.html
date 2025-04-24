@@ -12,8 +12,19 @@
   async function runExample() {
     const viewer = new ARA3D.Viewer()
     const loader = new ARA3D.GltfLoader()
+
+    console.log("Loading gltf ...")
     const gltf = await loader.load('/ara3d-webgl/duck.glb');
-    viewer.add(gltf)
+
+    console.log("Loaded gltf")
+
+    gltf.traverse(child => {
+      if (child.isMesh) {
+        viewer.add(child)
+      }
+    })
+
+    console.log("Completed")
   }
 
   runExample()

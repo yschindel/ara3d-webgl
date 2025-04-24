@@ -3,8 +3,8 @@
 */
 
 import { InputScheme } from '../../inputs/input'
-import { InputAction } from '../../raycaster'
 import { Measure } from './measure'
+import { InputAction } from '../../inputAction'
 
 export type MeasureStage = 'ready' | 'active' | 'done' | 'failed'
 
