@@ -2,16 +2,73 @@ import * as THREE from 'three';
 import { BimGeometry } from './bimGeometry'; 
 import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
-  const root = new THREE.Group();
+export function buildGeometryGroup(bim: BimGeometry): THREE.Group 
+{
+    const root = new THREE.Group();
 
-  const vertexCount = bim.VertexX.length;
-  const indexCount = bim.IndexBuffer.length;
-  const meshCount = bim.MeshVertexOffset.length;
-  const matCount = bim.MaterialRed.length;
-  const elementCount = bim.ElementMeshIndex.length;
+    const vertexCount = bim.VertexX.length;
+    const indexCount = bim.IndexBuffer.length;
+    const meshCount = bim.MeshVertexOffset.length;
+    const matCount = bim.MaterialRed.length;
+    const elementCount = bim.ElementMeshIndex.length;
+    const transformCount = bim.TransformTX.length;
 
-  console.log({ vertexCount, indexCount, meshCount, matCount, elementCount });
+    console.log({ vertexCount, indexCount, meshCount, matCount, elementCount, transformCount });
+
+    const transformMatrices = new Array(transformCount);
+    
+    const {
+        TransformTX,
+        TransformTY,
+        TransformTZ,
+        TransformQX,
+        TransformQY,
+        TransformQZ,
+        TransformQW,
+        TransformSX,
+        TransformSY,
+        TransformSZ,
+    } = bim;
+
+    function computeTransforms() 
+    {
+        const identity = new THREE.Matrix4;
+        const tmpPos = new THREE.Vector3;
+        const tmpQuat = new THREE.Quaternion;
+        const tmpScale = new THREE.Vector3;
+        for (let ti = 0; ti < transformCount; ti++)
+        {
+            const tx = TransformTX[ti];
+            const ty = TransformTY[ti];
+            const tz = TransformTZ[ti];
+            const sx = TransformSX[ti];
+            const sy = TransformSY[ti];
+            const sz = TransformSZ[ti];
+            const qx = TransformQX[ti];
+            const qy = TransformQY[ti];
+            const qz = TransformQZ[ti];
+            const qw = TransformQW[ti];
+
+            const isIdentity =
+                tx === 0 && ty === 0 && tz === 0 &&
+                sx === 1 && sy === 1 && sz === 1 &&
+                qx === 0 && qy === 0 && qz === 0 && qw === 1;    
+
+            const m = new THREE.Matrix4();
+            if (!isIdentity) 
+            {
+                tmpPos.set(tx, ty, tz);
+                tmpQuat.set(qx, qy, qz, qw);
+                tmpScale.set(sx, sy, sz);
+                m.compose(tmpPos, tmpQuat, tmpScale);
+            }
+            
+            transformMatrices[ti] = m; 
+        }
+    }
+
+    console.log("Computing transforms");
+    computeTransforms();
 
     const meshGeometries: Array<THREE.BufferGeometry | undefined> =
         new Array(meshCount);
@@ -94,6 +151,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
     type Bucket = {
         meshIndex: number;
         materialIndex: number;
+        transformIndex: number;
         elementIndices: number[];
     };
 
@@ -102,6 +160,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
     for (let ei = 0; ei < elementCount; ei++) {
         const meshIndex = bim.ElementMeshIndex[ei];
         const materialIndex = bim.ElementMaterialIndex[ei];
+        const transformIndex = bim.ElementTransformIndex[ei];
 
         // Skip invalid indices
         if (meshIndex < 0 || meshIndex >= meshCount) continue;
@@ -111,80 +170,48 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
         const key = `${meshIndex}|${materialIndex}`;
         let bucket = buckets.get(key);
         if (!bucket) {
-        bucket = { meshIndex, materialIndex, elementIndices: [] };
+        bucket = { meshIndex, materialIndex, transformIndex, elementIndices: [] };
             buckets.set(key, bucket);
         }
         bucket.elementIndices.push(ei);
     }
 
     console.log("Creating instanced meshes");
-    const pos = new THREE.Vector3();
-    const quat = new THREE.Quaternion();
-    const scale = new THREE.Vector3();
-    const matrix = new THREE.Matrix4();
-
-    const {
-        TransformTX,
-        TransformTY,
-        TransformTZ,
-        TransformQX,
-        TransformQY,
-        TransformQZ,
-        TransformQW,
-        TransformSX,
-        TransformSY,
-        TransformSZ,
-    } = bim;
-
+        
     for (const [, bucket] of buckets) {
         const { meshIndex, materialIndex, elementIndices } = bucket;
 
         const geom = meshGeometries[meshIndex];
         if (!geom) continue;
 
-        const mat = getMaterial(materialIndex);
+        const material = getMaterial(materialIndex);
         const count = elementIndices.length;
 
-        if (count === 1) {
-            // Single instance: simpler Mesh path
+        if (count === 1) 
+        {
             const ei = elementIndices[0];
             const ti = bim.ElementTransformIndex[ei];
-
-            pos.set(TransformTX[ti], TransformTY[ti], TransformTZ[ti]);
-            quat.set(TransformQX[ti], TransformQY[ti], TransformQZ[ti], TransformQW[ti]);
-            scale.set(TransformSX[ti], TransformSY[ti], TransformSZ[ti]);
-            matrix.compose(pos, quat, scale);
-
-            const mesh = new THREE.Mesh(geom, mat);
+            const matrix = transformMatrices[ti];
+            const mesh = new THREE.Mesh(geom, material);
             mesh.applyMatrix4(matrix);
             (mesh.userData as any).entityIndex = bim.ElementEntityIndex[ei] ?? -1;
             (mesh.userData as any).meshIndex = meshIndex;
             (mesh.userData as any).materialIndex = materialIndex;
-
             root.add(mesh);
             continue;
         }
 
-        const instanced = new THREE.InstancedMesh(geom, mat, count);
+        const instanced = new THREE.InstancedMesh(geom, material, count);
         instanced.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-
-        // Optional: keep a mapping from instance to entity index for picking
-        const instanceEntityIndices = new Int32Array(count);
 
         for (let i = 0; i < count; i++) {
             const ei = elementIndices[i];
             const ti = bim.ElementTransformIndex[ei];
-
-            pos.set(TransformTX[ti], TransformTY[ti], TransformTZ[ti]);
-            quat.set(TransformQX[ti], TransformQY[ti], TransformQZ[ti], TransformQW[ti]);
-            scale.set(TransformSX[ti], TransformSY[ti], TransformSZ[ti]);
-            matrix.compose(pos, quat, scale);
+            const matrix = new THREE.Matrix4().copy(transformMatrices[ti]);        
             instanced.setMatrixAt(i, matrix);
-            instanceEntityIndices[i] = bim.ElementEntityIndex[ei] ?? -1;
         }
 
         instanced.instanceMatrix.needsUpdate = true;
-        (instanced.userData as any).instanceEntityIndices = instanceEntityIndices;
         (instanced.userData as any).meshIndex = meshIndex;
         (instanced.userData as any).materialIndex = materialIndex;
 
@@ -212,66 +239,66 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
  * Result: fewer draw calls & less scene graph overhead for static geometry.
  */
 export function mergeStaticMeshesByMaterial(root: THREE.Group): void {
-  // Ensure world matrices are valid
-  root.updateWorldMatrix(true, true);
+    // Ensure world matrices are valid
+    root.updateWorldMatrix(true, true);
 
-  type MaterialGroup = {
-    material: THREE.Material;
-    meshes: THREE.Mesh[];
-  };
+    type MaterialGroup = {
+        material: THREE.Material;
+        meshes: THREE.Mesh[];
+    };
 
-  const groups = new Map<string, MaterialGroup>();
+    const groups = new Map<string, MaterialGroup>();
 
-  // Collect candidate meshes
-  root.traverse((obj) => {
-    const mesh = obj as THREE.Mesh;
+    // Collect candidate meshes
+    root.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
 
-    // Only plain Mesh, not InstancedMesh
-    if (!(mesh as any).isMesh || (mesh as any).isInstancedMesh) return;
-    if (!mesh.geometry) return;
-    if (Array.isArray(mesh.material)) return; // skip multi-materials
-    if (mesh.userData?.noMerge) return;       // user opt-out
+        // Only plain Mesh, not InstancedMesh
+        if (!(mesh as any).isMesh || (mesh as any).isInstancedMesh) return;
+        if (!mesh.geometry) return;
+        if (Array.isArray(mesh.material)) return; // skip multi-materials
+        if (mesh.userData?.noMerge) return;       // user opt-out
 
-    const material = mesh.material as THREE.Material;
-    const key = material.uuid;
+        const material = mesh.material as THREE.Material;
+        const key = material.uuid;
 
-    let group = groups.get(key);
-    if (!group) {
-      group = { material, meshes: [] };
-      groups.set(key, group);
-    }
+        let group = groups.get(key);
+        if (!group) {
+            group = { material, meshes: [] };
+            groups.set(key, group);
+        }
 
-    group.meshes.push(mesh);
-  });
+        group.meshes.push(mesh);
+    });
 
-  if (groups.size === 0) return;
+    if (groups.size === 0) 
+        return;
 
-  const rootWorldMatrix = new THREE.Matrix4().copy(root.matrixWorld);
-  const rootWorldMatrixInv = new THREE.Matrix4().copy(rootWorldMatrix).invert();
+    const rootWorldMatrix = new THREE.Matrix4().copy(root.matrixWorld);
+    const rootWorldMatrixInv = new THREE.Matrix4().copy(rootWorldMatrix).invert();
+    const meshesToRemove: THREE.Object3D[] = [];
 
-  const meshesToRemove: THREE.Object3D[] = [];
-
-  for (const [, group] of groups) {
-    const { material, meshes } = group;
+    for (const [, group] of groups) {
+        const { material, meshes } = group;
 
     if (meshes.length <= 1) {
-      // Nothing to merge for this material
-      continue;
+        // Nothing to merge for this material
+        continue;
     }
 
     const geometries: THREE.BufferGeometry[] = [];
 
     for (const mesh of meshes) {
-      const geom = mesh.geometry as THREE.BufferGeometry;
-      const cloned = geom.clone();
+        const geom = mesh.geometry as THREE.BufferGeometry;
+        const cloned = geom.clone();
 
-      // Bring geometry into root-local space
-      const worldMatrix = new THREE.Matrix4().copy(mesh.matrixWorld);
-      worldMatrix.premultiply(rootWorldMatrixInv);
-      cloned.applyMatrix4(worldMatrix);
+        // Bring geometry into root-local space
+        const worldMatrix = new THREE.Matrix4().copy(mesh.matrixWorld);
+        worldMatrix.premultiply(rootWorldMatrixInv);
+        cloned.applyMatrix4(worldMatrix);
 
-      geometries.push(cloned);
-      meshesToRemove.push(mesh);
+        geometries.push(cloned);
+        meshesToRemove.push(mesh);
     }
 
     const mergedGeometry = mergeBufferGeometries(geometries, false);
@@ -283,12 +310,12 @@ export function mergeStaticMeshesByMaterial(root: THREE.Group): void {
     const mergedMesh = new THREE.Mesh(mergedGeometry, material);
     mergedMesh.name = `Merged_${material.uuid}`;
     root.add(mergedMesh);
-  }
+    } 
 
-  // Remove originals after we’re done traversing
-  for (const m of meshesToRemove) {
-    if (m.parent) {
-      m.parent.remove(m);
+    // Remove originals after we’re done traversing
+    for (const m of meshesToRemove) {
+        if (m.parent) {
+            m.parent.remove(m);
+        }
     }
-  }
 }
