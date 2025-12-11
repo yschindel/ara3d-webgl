@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BimGeometry } from './bimGeometry'; 
+import { mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
   const root = new THREE.Group();
@@ -11,10 +12,6 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
   const elementCount = bim.ElementMeshIndex.length;
 
   console.log({ vertexCount, indexCount, meshCount, matCount, elementCount });
-
-  // ---------------------------------------------------------------------------
-  // 1. Prepare mesh geometries (one geometry per unique mesh)
-  // ---------------------------------------------------------------------------
 
     const meshGeometries: Array<THREE.BufferGeometry | undefined> =
         new Array(meshCount);
@@ -36,7 +33,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
         const iCount = iEnd - iStart;
 
         const vStart = MeshVertexOffset[mi];
-        const vEnd = mi + 1 < meshCount ? MeshVertexOffset[mi + 1] : indexCount;
+        const vEnd = mi + 1 < meshCount ? MeshVertexOffset[mi + 1] : vertexCount;
         const vCount = vEnd - vStart;
 
         if (iCount == 0 || vCount == 0)
@@ -60,7 +57,6 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
         const geom = new THREE.BufferGeometry();
         geom.setAttribute('position', posBuffer);
         geom.setIndex(new THREE.BufferAttribute(indexArray, 1));
-        geom.computeVertexNormals();
         meshGeometries[mi] = geom;
     }
 
@@ -79,14 +75,19 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
         const roughness = (bim.MaterialRoughness[mi] ?? 128) / 255;
         const metalness = (bim.MaterialMetallic[mi] ?? 0) / 255;
 
-        return materialCache[mi] = new THREE.MeshStandardMaterial({
+        const mat = new THREE.MeshStandardMaterial({
             color: new THREE.Color(r, g, b),
             opacity: a,
+            flatShading: true,   
             transparent: a < 0.999,
             roughness,
             metalness,
             side: THREE.FrontSide,
             });
+
+        mat.needsUpdate = true;
+        materialCache[mi] = mat;
+        return mat;
     }
 
     console.log("Grouping elements by meshIndex, materialIndex");
@@ -144,8 +145,28 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
         const mat = getMaterial(materialIndex);
         const count = elementIndices.length;
 
+        if (count === 1) {
+            // Single instance: simpler Mesh path
+            const ei = elementIndices[0];
+            const ti = bim.ElementTransformIndex[ei];
+
+            pos.set(TransformTX[ti], TransformTY[ti], TransformTZ[ti]);
+            quat.set(TransformQX[ti], TransformQY[ti], TransformQZ[ti], TransformQW[ti]);
+            scale.set(TransformSX[ti], TransformSY[ti], TransformSZ[ti]);
+            matrix.compose(pos, quat, scale);
+
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.applyMatrix4(matrix);
+            (mesh.userData as any).entityIndex = bim.ElementEntityIndex[ei] ?? -1;
+            (mesh.userData as any).meshIndex = meshIndex;
+            (mesh.userData as any).materialIndex = materialIndex;
+
+            root.add(mesh);
+            continue;
+        }
+
         const instanced = new THREE.InstancedMesh(geom, mat, count);
-        instanced.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        instanced.instanceMatrix.setUsage(THREE.StaticDrawUsage);
 
         // Optional: keep a mapping from instance to entity index for picking
         const instanceEntityIndices = new Int32Array(count);
@@ -172,5 +193,102 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group {
 
     console.log("Converting Z-up to Y-up");
     root.rotation.x = -Math.PI / 2;
+
+    console.log("Merging non-instanced meshes by material");
+    mergeStaticMeshesByMaterial(root);
+
+    console.log("Completed creating group");
     return root;
+}
+
+/**
+ * Merge non-instanced THREE.Mesh children of `root` that share exactly
+ * the same material instance into larger static meshes.
+ *
+ * - Skips InstancedMesh.
+ * - Skips meshes with multi-materials (material is an array).
+ * - Skips meshes with userData.noMerge === true.
+ *
+ * Result: fewer draw calls & less scene graph overhead for static geometry.
+ */
+export function mergeStaticMeshesByMaterial(root: THREE.Group): void {
+  // Ensure world matrices are valid
+  root.updateWorldMatrix(true, true);
+
+  type MaterialGroup = {
+    material: THREE.Material;
+    meshes: THREE.Mesh[];
+  };
+
+  const groups = new Map<string, MaterialGroup>();
+
+  // Collect candidate meshes
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+
+    // Only plain Mesh, not InstancedMesh
+    if (!(mesh as any).isMesh || (mesh as any).isInstancedMesh) return;
+    if (!mesh.geometry) return;
+    if (Array.isArray(mesh.material)) return; // skip multi-materials
+    if (mesh.userData?.noMerge) return;       // user opt-out
+
+    const material = mesh.material as THREE.Material;
+    const key = material.uuid;
+
+    let group = groups.get(key);
+    if (!group) {
+      group = { material, meshes: [] };
+      groups.set(key, group);
+    }
+
+    group.meshes.push(mesh);
+  });
+
+  if (groups.size === 0) return;
+
+  const rootWorldMatrix = new THREE.Matrix4().copy(root.matrixWorld);
+  const rootWorldMatrixInv = new THREE.Matrix4().copy(rootWorldMatrix).invert();
+
+  const meshesToRemove: THREE.Object3D[] = [];
+
+  for (const [, group] of groups) {
+    const { material, meshes } = group;
+
+    if (meshes.length <= 1) {
+      // Nothing to merge for this material
+      continue;
+    }
+
+    const geometries: THREE.BufferGeometry[] = [];
+
+    for (const mesh of meshes) {
+      const geom = mesh.geometry as THREE.BufferGeometry;
+      const cloned = geom.clone();
+
+      // Bring geometry into root-local space
+      const worldMatrix = new THREE.Matrix4().copy(mesh.matrixWorld);
+      worldMatrix.premultiply(rootWorldMatrixInv);
+      cloned.applyMatrix4(worldMatrix);
+
+      geometries.push(cloned);
+      meshesToRemove.push(mesh);
+    }
+
+    const mergedGeometry = mergeBufferGeometries(geometries, false);
+    if (!mergedGeometry) continue;
+
+    mergedGeometry.computeBoundingSphere();
+    mergedGeometry.computeBoundingBox();
+
+    const mergedMesh = new THREE.Mesh(mergedGeometry, material);
+    mergedMesh.name = `Merged_${material.uuid}`;
+    root.add(mergedMesh);
+  }
+
+  // Remove originals after we’re done traversing
+  for (const m of meshesToRemove) {
+    if (m.parent) {
+      m.parent.remove(m);
+    }
+  }
 }

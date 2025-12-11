@@ -49,16 +49,8 @@ export class MouseHandler extends InputHandler {
     return this.viewport.canvas
   }
 
-  private get raycaster () {
-    return this._viewer.raycaster
-  }
-
   private get inputs () {
     return this._viewer.inputs
-  }
-
-  private get gizmoRect () {
-    return this._viewer.gizmoRectangle
   }
 
   protected override addListeners (): void {
@@ -68,9 +60,8 @@ export class MouseHandler extends InputHandler {
     this.reg(this.canvas, 'mousemove', this.onMouseMove)
     this.reg(this.canvas, 'mouseup', this.onMouseUp)
     this.reg(this.canvas, 'mouseout', this.onMouseOut)
-    this.reg(this.canvas, 'dblclick', this.onDoubleClick)
 
-    // Disable right click menu
+    // Disable right click menu 
     this.reg(this.canvas, 'contextmenu', (e) => e.preventDefault())
     this._unregisters.push(
       this.camera.onMoved.subscribe(() => this.onCameraMoved())
@@ -90,9 +81,6 @@ export class MouseHandler extends InputHandler {
       this._idlePosition = undefined
     }
     clearTimeout(this._idleTimeout)
-    this._idleTimeout = setTimeout(() => {
-      this.onMouseIdle(this._lastPosition)
-    }, this._idleDelayMs)
   }
 
   private onMouseOut = (event: MouseEvent) => {
@@ -103,17 +91,9 @@ export class MouseHandler extends InputHandler {
     this.resetIdle()
   }
 
-  private onMouseIdle = (position: THREE.Vector2 | undefined) => {
-    if (this._buttonDown || !position) return
-    const action = new InputAction('idle', 'none', position, this.raycaster)
-    this._viewer.inputs.IdleAction(action)
-    this._idlePosition = position
-  }
-
   private onCameraMoved = () => {
     this.resetIdle()
     this._hasCameraMoved = true
-    this.gizmoRect.visible = false
   }
 
   private onMouseMove = (event: any) => {
@@ -205,12 +185,6 @@ export class MouseHandler extends InputHandler {
       case 'zoom':
         this.camera.do().zoom(1 + delta.y * this.zoomSpeed)
         break
-      case 'rect':
-        if (!this._hasCameraMoved) {
-          this.updateRectangle()
-          this.gizmoRect.visible = true
-        }
-        break
     }
   }
 
@@ -255,74 +229,17 @@ export class MouseHandler extends InputHandler {
     const btn = this.getButton(event)
     if (btn === this._buttonDown) return // the active button is still down.
 
-    this._viewer.gizmoRectangle.visible = false
     event.preventDefault()
     if (!this._buttonDown) return
 
-    if (
-      this.inputs.pointerActive === 'rect' &&
-      this._hasMouseMoved &&
-      !this._hasCameraMoved
-    ) {
-      this.onRectEnd()
-    } else if (event.button === 0 && !this._hasMouseMoved) {
-      this.onMouseClick(
-        new THREE.Vector2(event.offsetX, event.offsetY),
-        false,
-        this.getModifier(event)
-      )
-    } else if (event.button === 2 && !this._hasMouseMoved) {
+    if (event.button === 2 && !this._hasMouseMoved) {
       this.inputs.ContextMenu(new THREE.Vector2(event.clientX, event.clientY))
     }
     this._buttonDown = undefined
     this.inputs.pointerOverride = undefined
   }
 
-  private onRectEnd () {
-    const box = this.gizmoRect.getBoundingBox()
-    if (!box) return
-
-    // Shrink box for better camera fit.
-    const center = box.getCenter(new THREE.Vector3())
-    const size = box.getSize(new THREE.Vector3())
-    size.multiplyScalar(0.5)
-    box.setFromCenterAndSize(center, size)
-
-    // Frame Camera
-    this._viewer.camera.lerp(1).frame(box)
-  }
-
-  private onDoubleClick = (event: MouseEvent) => {
-    event.stopImmediatePropagation()
-    this.onMouseClick(
-      new THREE.Vector2(event.offsetX, event.offsetY),
-      true,
-      this.getModifier(event)
-    )
-  }
-
-  private onMouseClick = (
-    position: THREE.Vector2,
-    doubleClick: boolean,
-    modifier: Modifier
-  ) => {
-    const action = new InputAction(
-      doubleClick ? 'double' : 'main',
-      modifier,
-      position,
-      this.raycaster
-    )
-
-    this._viewer.inputs.MainAction(action)
-  }
-
   private getModifier (event: MouseEvent | WheelEvent) {
     return event.ctrlKey ? 'ctrl' : event.shiftKey ? 'shift' : 'none'
-  }
-
-  private updateRectangle () {
-    if (this._downPosition && this._lastPosition) {
-      this.gizmoRect.setCorners(this._downPosition, this._lastPosition)
-    }
   }
 }

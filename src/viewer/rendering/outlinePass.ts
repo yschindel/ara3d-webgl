@@ -51,6 +51,7 @@ export class OutlinePass extends Pass {
     writeBuffer: THREE.WebGLRenderTarget,
     readBuffer: THREE.WebGLRenderTarget
   ) {
+      console.log("Rendering outline pass");
     // Turn off writing to the depth buffer
     // because we need to read from it in the subsequent passes.
     const depthBufferValue = writeBuffer.depthBuffer

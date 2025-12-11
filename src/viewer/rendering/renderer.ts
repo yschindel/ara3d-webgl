@@ -24,15 +24,7 @@ export class Renderer
   private _composer: RenderingComposer
   private _materials: Materials
   private _renderText: boolean | undefined
-  private _needsUpdate: boolean
-
-  get needsUpdate () {
-    return this._needsUpdate
-  }
-
-  set needsUpdate (value: boolean) {
-    this._needsUpdate = this._needsUpdate || value
-  }
+  public _needsUpdate: boolean
 
   constructor (
     scene: RenderScene,
@@ -46,15 +38,28 @@ export class Renderer
     this._materials = materials
     this._camera = camera
 
-    this.renderer = new THREE.WebGLRenderer({
-      canvas: viewport.canvas,
-      antialias: true,
-      precision: 'highp', // 'lowp', 'mediump', 'highp'
-      alpha: true,
-      stencil: false,
-      powerPreference: 'high-performance',
-      logarithmicDepthBuffer: true
-    })
+    // Higher performance trades quality for performance
+    const highPerformance = false; 
+
+    this.renderer = highPerformance 
+      ? new THREE.WebGLRenderer({
+        canvas: viewport.canvas,
+        antialias: false,
+        precision: 'lowp',
+        alpha: true,
+        stencil: false,
+        powerPreference: 'high-performance',
+        logarithmicDepthBuffer: false,
+      }) 
+      : new THREE.WebGLRenderer({
+        canvas: viewport.canvas,
+        antialias: true,
+        precision: 'highp', 
+        alpha: true,
+        stencil: false,
+        powerPreference: 'high-performance',
+        logarithmicDepthBuffer: true
+      })
 
     this.textRenderer = this._viewport.createTextRenderer()
     this.textEnabled = false
@@ -73,9 +78,9 @@ export class Renderer
     this._viewport.onResize.subscribe(() => this.fitViewport())
     this._camera.onValueChanged.sub(() => {
       this._composer.camera = this._camera.three
-      this.needsUpdate = true
+      this._needsUpdate = true
     })
-    this._materials.onUpdate.sub(() => (this.needsUpdate = true))
+    this._materials.onUpdate.sub(() => (this._needsUpdate = true))
     this.background = settings.background.color
   }
 
@@ -94,7 +99,7 @@ export class Renderer
 
   set background (color: THREE.Color | THREE.Texture) {
     this._scene.scene.background = color
-    this.needsUpdate = true
+    this._needsUpdate = true
   }
 
   get textEnabled () {
@@ -103,7 +108,7 @@ export class Renderer
 
   set textEnabled (value: boolean) {
     if (value === this._renderText) return
-    this.needsUpdate = true
+    this._needsUpdate = true
     this._renderText = value
     this.textRenderer.domElement.style.display = value ? 'block' : 'none'
   }
@@ -114,10 +119,20 @@ export class Renderer
 
   render ()
   {
+    const needsRender =
+      this._needsUpdate ||
+      this._camera.hasMoved || // assuming this toggles for motion
+      this.textEnabled // optional, see below
+
+    if (!needsRender && this._composer.onDemand) {
+      // absolutely nothing to do this frame
+      return
+    }
+
     this._composer.outlines = this._scene.hasOutline()
 
     this._composer.render(
-      this.needsUpdate,
+      this._needsUpdate,
       this.antialias && !this._camera.hasMoved
     )
     this._needsUpdate = false
@@ -154,9 +169,23 @@ export class Renderer
     this._composer.samples = value
   }
 
+  private _lastSize = new THREE.Vector2();
+
   private fitViewport = () => {
+    console.log("Fitting to viewport")
     const size = this._viewport.getParentSize()
-    this.renderer.setPixelRatio(window.devicePixelRatio)
+
+    // avoid thrashing if you get multiple resize events with the same values.
+    if (size.x === this._lastSize.x && size.y === this._lastSize.y) {
+      return
+    }
+    this._lastSize.copy(size);
+
+    // TEMP: optimization
+    const maxPixelRatio = 1.0; // could be 1.5
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio))
+    //this.renderer.setPixelRatio(window.devicePixelRatio)
+    
     this.renderer.setSize(size.x, size.y)
     this._composer.setSize(size.x, size.y)
     this.textRenderer.setSize(size.x, size.y)

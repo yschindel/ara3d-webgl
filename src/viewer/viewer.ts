@@ -4,16 +4,10 @@ import * as THREE from 'three'
 import { Settings, getSettings, PartialSettings } from './viewerSettings'
 import { Camera } from './camera/camera'
 import { Input } from './inputs/input'
-import { Selection } from './selection'
 import { Environment, IEnvironment } from './environment'
-import { Raycaster } from './raycaster'
 import { GizmoOrbit } from './gizmos/gizmoOrbit'
 import { RenderScene } from './rendering/renderScene'
 import { Viewport } from './viewport'
-import { GizmoAxes } from './gizmos/gizmoAxes'
-import { SectionBox } from './gizmos/sectionBox/sectionBox'
-import { Measure, IMeasure } from './gizmos/measure/measure'
-import { GizmoRectangle } from './gizmos/gizmoRectangle'
 
 // loader
 import { Vim } from '../vim-loader/vim'
@@ -28,12 +22,7 @@ export class Viewer {
   settings: Settings
   renderer: Renderer
   viewport: Viewport
-  selection: Selection
   inputs: Input
-  raycaster: Raycaster
-  sectionBox: SectionBox
-  measure: IMeasure
-  gizmoRectangle: GizmoRectangle
   grid: GizmoGrid
 
   get materials() : Materials {
@@ -44,9 +33,6 @@ export class Viewer {
     return this._camera
   }
 
-  /**
-   * Interface to manipulate THREE elements not directly related to vim.
-   */
   get environment () {
     return this._environment as IEnvironment
   }
@@ -60,14 +46,14 @@ export class Viewer {
 
   private _environment: Environment
   private _camera: Camera
-  private _clock = new THREE.Clock()
-  private _gizmoAxes: GizmoAxes
   private _gizmoOrbit: GizmoOrbit
 
   // State
   private _vims = new Set<Vim>()
   private _onVimLoaded = new SignalDispatcher()
-  private _updateId: number
+  private _running = false
+  private _updateId: number | null = null
+  private _clock = new THREE.Clock()
 
   constructor (options?: PartialSettings) {
     this.settings = getSettings(options)
@@ -83,7 +69,6 @@ export class Viewer {
       this.settings
     )
 
-    this.gizmoRectangle = new GizmoRectangle(this)
     this.inputs = new Input(this)
 
     if (this.settings.camera.gizmo.enable) {
@@ -96,11 +81,6 @@ export class Viewer {
     }
     this.materials.applySettings(this.settings.materials)
 
-    this.measure = new Measure(this)
-    this._gizmoAxes = new GizmoAxes(this.camera, this.settings.axes)
-    this.viewport.canvas.parentElement?.prepend(this._gizmoAxes.canvas)
-
-    this.sectionBox = new SectionBox(this)
 
     this.grid = new GizmoGrid(this.renderer)
 
@@ -108,28 +88,41 @@ export class Viewer {
     this._environment.getObjects().forEach((o) => this.renderer.add(o))
 
     // Input and Selection
-    this.selection = new Selection()
-    this.raycaster = new Raycaster(
-      this.viewport,
-      this._camera,
-      scene,
-      this.renderer
-    )
-
     this.inputs.registerAll()
 
     // Start Loop
+    this.start()
+  }
+
+  start () {
+    if (this._running) return
+    this._running = true
+    this._clock.start()
     this.animate()
   }
 
-  // Calls render, and asks the framework to prepare the next frame
-  private animate () {
-    this._updateId = requestAnimationFrame(() => this.animate())
-    this.renderer.needsUpdate = this._camera.update(this._clock.getDelta())
+  stop () {
+    this._running = false
+    if (this._updateId !== null) {
+      cancelAnimationFrame(this._updateId)
+      this._updateId = null
+    }
+  }
+
+  private animate = () => {
+    if (!this._running) return
+
+    this._updateId = requestAnimationFrame(this.animate)
+
+    const dt = this._clock.getDelta()
+    const camChanged = this._camera.update(dt)
+
+    this.renderer._needsUpdate = this.renderer._needsUpdate || camChanged
     this.renderer.render()
   }
 
   addObject (object: THREE.Object3D) {
+    console.log("Adding object");
     if (!this.renderer.add(object)) {
       throw new Error("Could not load object")
     }
@@ -156,7 +149,6 @@ export class Viewer {
     const box = this.renderer.getBoundingBox()
     if (box) {
       this._environment.adaptToContent(box)
-      this.sectionBox.fitBox(box)
     }
 
     if (frameCamera) {
@@ -165,9 +157,6 @@ export class Viewer {
     }
   }
 
-  /**
-   * Unload given vim from viewer.
-   */
   remove (vim: Vim) {
     if (!this._vims.has(vim)) {
       throw new Error('Cannot remove missing vim from viewer.')
@@ -176,33 +165,21 @@ export class Viewer {
     this._vims.add(vim)
     this.renderer.remove(vim.scene)
     vim.dispose()
-    if (this.selection.vim === vim) {
-      this.selection.clear()
-    }
     this._onVimLoaded.dispatch()
   }
 
-  /**
-   * Unloads all vim from viewer.
-   */
   clear () {
     this._vims.forEach((v) => this.remove(v))
   }
 
-  /**
-   * Disposes all resources.
-   */
   dispose () {
     cancelAnimationFrame(this._updateId)
-    this.selection.dispose()
     this._environment.dispose()
-    this.selection.clear()
     this._gizmoOrbit.dispose()
     this.viewport.dispose()
     this.renderer.dispose()
     this.inputs.unregisterAll()
     this._vims.forEach((v) => v?.dispose())
     this.materials.dispose()
-    this.gizmoRectangle.dispose()
   }
 }

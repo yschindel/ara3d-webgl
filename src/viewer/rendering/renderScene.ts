@@ -78,6 +78,8 @@ export class RenderScene {
 
   private addScene (scene: Scene) {
     this._scenes.push(scene)
+
+    console.log("Adding objects to scene");
     scene.meshes.forEach((m) => {
       this.scene.add(m.mesh)
     })
@@ -87,7 +89,8 @@ export class RenderScene {
   }
 
   private updateBox (box: THREE.Box3 | undefined) {
-    if (!box) return
+    console.log("Updating bounding box")
+        if (!box) return
     this._boundingBox = this._boundingBox ? this._boundingBox.union(box) : box
   }
 
