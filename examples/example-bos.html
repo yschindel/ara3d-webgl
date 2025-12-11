@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Basic Example</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<script type="module">
+  import * as ARA3D from '../src/index'
+
+  async function runExample() {
+    const viewer = new ARA3D.Viewer()
+    const loader = new ARA3D.BimOpenSchemaLoader()
+
+    console.log("Loading .bos file ...")
+    const gltf = await loader.load('/ara3d-webgl/snowdon.bos');
+    console.log("Loaded .bos file");
+    viewer.add(gltf);
+
+    console.log("Completed")
+  }
+
+  runExample()
+</script>
+</body>
+</html>
