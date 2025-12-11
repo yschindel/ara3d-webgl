@@ -67,8 +67,9 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
         }
     }
 
-    console.log("Computing transforms");
+    console.time("Computing transforms");
     computeTransforms();
+    console.timeEnd("Computing transforms");
 
     const meshGeometries: Array<THREE.BufferGeometry | undefined> =
         new Array(meshCount);
@@ -82,7 +83,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
         MeshIndexOffset,
     } = bim;
         
-    console.log("Creating mesh geometries");
+    console.time("Creating mesh geometries");
     for (let mi = 0; mi < meshCount; mi++) 
     {
         const iStart = MeshIndexOffset[mi];
@@ -116,8 +117,8 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
         geom.setIndex(new THREE.BufferAttribute(indexArray, 1));
         meshGeometries[mi] = geom;
     }
+    console.timeEnd("Creating mesh geometries");
 
-    console.log("Creating materials");
     const materialCache: Array<THREE.MeshStandardMaterial | undefined> =
         new Array(matCount);
 
@@ -147,7 +148,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
         return mat;
     }
 
-    console.log("Grouping elements by meshIndex, materialIndex");
+    console.time("Grouping elements");
     type Bucket = {
         meshIndex: number;
         materialIndex: number;
@@ -175,9 +176,9 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
         }
         bucket.elementIndices.push(ei);
     }
+    console.timeEnd("Grouping elements");
 
-    console.log("Creating instanced meshes");
-        
+    console.time("Creating instanced meshes");        
     for (const [, bucket] of buckets) {
         const { meshIndex, materialIndex, elementIndices } = bucket;
 
@@ -206,9 +207,8 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
 
         for (let i = 0; i < count; i++) {
             const ei = elementIndices[i];
-            const ti = bim.ElementTransformIndex[ei];
-            const matrix = new THREE.Matrix4().copy(transformMatrices[ti]);        
-            instanced.setMatrixAt(i, matrix);
+            const ti = bim.ElementTransformIndex[ei];  
+            instanced.setMatrixAt(i, transformMatrices[ti]);
         }
 
         instanced.instanceMatrix.needsUpdate = true;
@@ -217,12 +217,14 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
 
         root.add(instanced);
     }
+    console.timeEnd("Creating instanced meshes");        
 
     console.log("Converting Z-up to Y-up");
     root.rotation.x = -Math.PI / 2;
 
-    console.log("Merging non-instanced meshes by material");
+    console.time("Merging non-instanced meshes by material");
     mergeStaticMeshesByMaterial(root);
+    console.timeEnd("Merging non-instanced meshes by material");
 
     console.log("Completed creating group");
     return root;
@@ -240,7 +242,9 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
  */
 export function mergeStaticMeshesByMaterial(root: THREE.Group): void {
     // Ensure world matrices are valid
+    console.time("Updating world matrices")
     root.updateWorldMatrix(true, true);
+    console.timeEnd("Updating world matrices")
 
     type MaterialGroup = {
         material: THREE.Material;
@@ -249,15 +253,13 @@ export function mergeStaticMeshesByMaterial(root: THREE.Group): void {
 
     const groups = new Map<string, MaterialGroup>();
 
-    // Collect candidate meshes
+    console.time("Collecting candidate meshes");
     root.traverse((obj) => {
         const mesh = obj as THREE.Mesh;
 
         // Only plain Mesh, not InstancedMesh
         if (!(mesh as any).isMesh || (mesh as any).isInstancedMesh) return;
         if (!mesh.geometry) return;
-        if (Array.isArray(mesh.material)) return; // skip multi-materials
-        if (mesh.userData?.noMerge) return;       // user opt-out
 
         const material = mesh.material as THREE.Material;
         const key = material.uuid;
@@ -270,52 +272,144 @@ export function mergeStaticMeshesByMaterial(root: THREE.Group): void {
 
         group.meshes.push(mesh);
     });
+    console.timeEnd("Collecting candidate meshes");
 
     if (groups.size === 0) 
         return;
 
+    const relMatrix = new THREE.Matrix4();
+    const identityMatrix = new THREE.Matrix4();  
     const rootWorldMatrix = new THREE.Matrix4().copy(root.matrixWorld);
     const rootWorldMatrixInv = new THREE.Matrix4().copy(rootWorldMatrix).invert();
     const meshesToRemove: THREE.Object3D[] = [];
 
+    console.time("Merging groups");
     for (const [, group] of groups) {
         const { material, meshes } = group;
 
-    if (meshes.length <= 1) {
-        // Nothing to merge for this material
-        continue;
-    }
+        if (meshes.length <= 1) {
+            // Nothing to merge for this material
+            continue;
+        }
 
-    const geometries: THREE.BufferGeometry[] = [];
+        const geometries: THREE.BufferGeometry[] = [];
 
-    for (const mesh of meshes) {
-        const geom = mesh.geometry as THREE.BufferGeometry;
-        const cloned = geom.clone();
+        for (const mesh of meshes) {
+            const geom = mesh.geometry as THREE.BufferGeometry;
+            // Compute mesh->root relative matrix: M_rel = M_world * rootWorld^-1
+            relMatrix.copy(mesh.matrixWorld).premultiply(rootWorldMatrixInv);
 
-        // Bring geometry into root-local space
-        const worldMatrix = new THREE.Matrix4().copy(mesh.matrixWorld);
-        worldMatrix.premultiply(rootWorldMatrixInv);
-        cloned.applyMatrix4(worldMatrix);
+            if (relMatrix.equals(identityMatrix)) {
+                // Already in root-local space: reuse geometry directly
+                geometries.push(geom);
+            } else {
+                // Need to transform a clone
+                const cloned = geom.clone();
+                cloned.applyMatrix4(relMatrix);
+                geometries.push(cloned);
+            }
+            meshesToRemove.push(mesh);
+        }
 
-        geometries.push(cloned);
-        meshesToRemove.push(mesh);
-    }
+        const mergedGeometry = mergeGeometries(geometries);
+        if (!mergedGeometry) continue;
 
-    const mergedGeometry = mergeBufferGeometries(geometries, false);
-    if (!mergedGeometry) continue;
+        //mergedGeometry.computeBoundingSphere();
+        //mergedGeometry.computeBoundingBox();
 
-    mergedGeometry.computeBoundingSphere();
-    mergedGeometry.computeBoundingBox();
-
-    const mergedMesh = new THREE.Mesh(mergedGeometry, material);
-    mergedMesh.name = `Merged_${material.uuid}`;
-    root.add(mergedMesh);
+        const mergedMesh = new THREE.Mesh(mergedGeometry, material);
+        mergedMesh.name = `Merged_${material.uuid}`;
+        root.add(mergedMesh);
     } 
+    console.timeEnd("Merging groups");
 
-    // Remove originals after we’re done traversing
+    console.time("Removing meshes");
     for (const m of meshesToRemove) {
         if (m.parent) {
             m.parent.remove(m);
         }
     }
+    console.timeEnd("Removing meshes");
+}
+
+export function mergeGeometries(
+  geometries: Array<THREE.BufferGeometry>
+): THREE.BufferGeometry {
+  // First pass: count total vertices and indices
+  let indexCount = 0;
+  let posCount = 0;
+
+  for (let i = 0, l = geometries.length; i < l; i++) {
+    const geometry = geometries[i];
+
+    const index = geometry.getIndex();
+    const position = geometry.getAttribute('position');
+
+    if (!index) {
+      throw new Error('mergeGeometries: geometry has no index buffer');
+    }
+    if (!position) {
+      throw new Error('mergeGeometries: geometry has no position attribute');
+    }
+
+    indexCount += index.count;
+    posCount += position.count;
+  }
+
+  // Allocate merged buffers
+  // Assuming positions are vec3 (itemSize = 3)
+  const mergedPositions = new Float32Array(posCount * 3);
+  const mergedIndices = new Uint32Array(indexCount);
+
+  let indexOffset = 0;      // how many indices we've already written
+  let vertexOffset = 0;     // how many vertices we've already written
+
+  // Second pass: copy data
+  for (let i = 0, l = geometries.length; i < l; i++) {
+    const geometry = geometries[i];
+
+    const posAttr = geometry.getAttribute('position') as THREE.BufferAttribute;
+    const indexAttr = geometry.getIndex() as THREE.BufferAttribute;
+
+    const srcPosArray = posAttr.array as Float32Array | ArrayLike<number>;
+    const srcIndexArray = indexAttr.array as Uint16Array | Uint32Array;
+
+    const vertCount = posAttr.count;
+    const idxCount = indexAttr.count;
+
+    const posItemSize = posAttr.itemSize; // usually 3
+
+    // --- Copy positions ---
+    // We only copy the used segment (0..vertCount*itemSize)
+    const srcPosLength = vertCount * posItemSize;
+    const dstPosOffset = vertexOffset * posItemSize;
+
+    if ((srcPosArray as any).subarray) {
+      // Fast path for typed arrays
+      mergedPositions.set(
+        (srcPosArray as any).subarray(0, srcPosLength),
+        dstPosOffset
+      );
+    } else {
+      // Fallback (rare)
+      for (let j = 0; j < srcPosLength; j++) {
+        mergedPositions[dstPosOffset + j] = srcPosArray[j];
+      }
+    }
+
+    // --- Copy indices, with vertex offset ---
+    for (let j = 0; j < idxCount; j++) {
+      mergedIndices[indexOffset + j] = srcIndexArray[j] + vertexOffset;
+    }
+
+    vertexOffset += vertCount;
+    indexOffset += idxCount;
+  }
+
+  // Build merged geometry
+  const mergedGeom = new THREE.BufferGeometry();
+  mergedGeom.setAttribute('position', new THREE.BufferAttribute(mergedPositions, 3));
+  mergedGeom.setIndex(new THREE.BufferAttribute(mergedIndices, 1));
+
+  return mergedGeom;
 }
