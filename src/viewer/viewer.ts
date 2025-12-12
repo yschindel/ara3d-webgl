@@ -8,16 +8,9 @@ import { Environment, IEnvironment } from './environment'
 import { GizmoOrbit } from './gizmos/gizmoOrbit'
 import { RenderScene } from './rendering/renderScene'
 import { Viewport } from './viewport'
-
-// loader
-import { Vim } from '../vim-loader/vim'
 import { Renderer } from './rendering/renderer'
 import { GizmoGrid, Materials } from '../index'
-import { SignalDispatcher } from 'ste-signals'
 
-/**
- * Viewer and loader for vim files.
- */
 export class Viewer {
   settings: Settings
   renderer: Renderer
@@ -37,20 +30,9 @@ export class Viewer {
     return this._environment as IEnvironment
   }
 
-  /**
-   * Signal dispatched when a new vim is loaded or unloaded.
-   */
-  get onVimLoaded () {
-    return this._onVimLoaded.asEvent()
-  }
-
   private _environment: Environment
   private _camera: Camera
   private _gizmoOrbit: GizmoOrbit
-
-  // State
-  private _vims = new Set<Vim>()
-  private _onVimLoaded = new SignalDispatcher()
   private _running = false
   private _updateId: number | null = null
   private _clock = new THREE.Clock()
@@ -121,56 +103,18 @@ export class Viewer {
     this.renderer.render()
   }
 
-  addObject (object: THREE.Object3D) {
+
+  add (obj: THREE.Object3D, frameCamera = true) {
     console.log("Adding object");
     this.renderer._needsUpdate = true;
-    if (!this.renderer.add(object)) {
+    if (!this.renderer.add(obj)) {
       throw new Error("Could not load object")
     }
   }
 
-  add (vim: Vim | THREE.Object3D, frameCamera = true) {
-    if (vim instanceof THREE.Object3D)
-    {
-      this.addObject(vim)
-      return
-    }
-
-    if (this._vims.has(vim)) {
-      throw new Error('Vim cannot be added again, unless removed first.')
-    }
-
-    const success = this.renderer.add(vim.scene)
-    if (!success) {
-      vim.dispose()
-      throw new Error('Could not load vim.')
-    }
-    this._vims.add(vim)
-
-    const box = this.renderer.getBoundingBox()
-    if (box) {
-      this._environment.adaptToContent(box)
-    }
-
-    if (frameCamera) {
-      this._camera.do(true).frame('all', this._camera.defaultForward)
-      this._camera.save()
-    }
-  }
-
-  remove (vim: Vim) {
-    if (!this._vims.has(vim)) {
-      throw new Error('Cannot remove missing vim from viewer.')
-    }
-
-    this._vims.add(vim)
-    this.renderer.remove(vim.scene)
-    vim.dispose()
-    this._onVimLoaded.dispatch()
-  }
 
   clear () {
-    this._vims.forEach((v) => this.remove(v))
+    this.renderer.clear();
   }
 
   dispose () {
@@ -180,7 +124,6 @@ export class Viewer {
     this.viewport.dispose()
     this.renderer.dispose()
     this.inputs.unregisterAll()
-    this._vims.forEach((v) => v?.dispose())
     this.materials.dispose()
   }
 }

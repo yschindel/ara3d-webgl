@@ -1,7 +1,3 @@
-/**
- * @module viw-webgl-viewer/gizmos
- */
-
 import * as THREE from 'three'
 import { Camera } from '../camera/camera'
 

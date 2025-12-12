@@ -1,9 +1,4 @@
-/**
- * @module viw-webgl-viewer/camera
- */
-
 import { CameraMovement } from './cameraMovement'
-import { VimObject } from '../../index'
 import * as THREE from 'three'
 
 export class CameraMovementDo extends CameraMovement {
@@ -43,9 +38,7 @@ export class CameraMovementDo extends CameraMovement {
     this.set(this._camera.position, target)
   }
 
-  target (target: VimObject | THREE.Vector3): void {
-    const pos = target instanceof VimObject ? target.getCenter() : target
-    if (!pos) return
+  target (pos: THREE.Vector3): void {
     this.set(this._camera.position, pos)
   }
 
