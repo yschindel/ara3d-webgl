@@ -182,13 +182,13 @@ export class Renderer
     this._lastSize.copy(size);
 
     // TEMP: optimization
-    const maxPixelRatio = 1.0; // could be 1.5
+    const maxPixelRatio = 1.5; // could be 1.5
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio))
     //this.renderer.setPixelRatio(window.devicePixelRatio)
     
     this.renderer.setSize(size.x, size.y)
     this._composer.setSize(size.x, size.y)
     this.textRenderer.setSize(size.x, size.y)
-    this.needsUpdate = true
+    this._needsUpdate = true
   }
 }

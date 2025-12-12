@@ -51,6 +51,7 @@ export class Viewport {
 
   /** Returns a text renderer that will render html in an html element sibling to canvas */
   createTextRenderer () {
+    console.log("Creating text renderer");
     if (!this.canvas.parentElement) {
       throw new Error('Cannot create text renderer without a canvas')
     }

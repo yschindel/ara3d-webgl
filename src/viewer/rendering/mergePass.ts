@@ -32,6 +32,7 @@ export class MergePass extends Pass {
     writeBuffer: THREE.WebGLRenderTarget,
     readBuffer: THREE.WebGLRenderTarget
   ) {
+      console.log("Rendering merge pass");
     this._material.sourceB = readBuffer.texture
     // 2. Draw the outlines using the depth texture and normal texture
     // and combine it with the scene color

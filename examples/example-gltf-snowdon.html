@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Basic Example</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<script type="module">
+  import * as ARA3D from '../src/index'
+
+  async function runExample() {
+    const viewer = new ARA3D.Viewer()
+    const loader = new ARA3D.GltfLoader()
+
+    console.time("Loading gltf")
+    const gltf = await loader.load('/ara3d-webgl/snowdon.glb');
+    console.timeEnd("Loading gltf")
+    
+    console.time("Adding to scene")
+    viewer.add(gltf);
+    console.timeEnd("Adding to scene")
+  }
+
+  runExample()
+</script>
+</body>
+</html>

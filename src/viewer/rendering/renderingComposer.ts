@@ -201,7 +201,8 @@ export class RenderingComposer {
     this.setup()
   }
 
-  render (updated: boolean, antialias: boolean) {
+  render (updated: boolean, antialias: boolean) 
+  {
     const time = new Date().getTime()
     if (updated) {
       this._nextAATime = time + 20

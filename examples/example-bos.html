@@ -13,13 +13,13 @@
     const viewer = new ARA3D.Viewer()
     const loader = new ARA3D.BimOpenSchemaLoader()
 
-    console.log("Loading .bos file ...")
-    viewer.stop();
+    console.time("Loading .bos file");
     const gltf = await loader.load('/ara3d-webgl/snowdon.bos');
-    console.log("Loaded .bos file");
+    console.timeEnd("Loading .bos file");
+
+    console.time("Add object to viewer")
     viewer.add(gltf);
-    viewer.start();
-    console.log("Completed")
+    console.timeEnd("Add object to viewer")
   }
 
   runExample()

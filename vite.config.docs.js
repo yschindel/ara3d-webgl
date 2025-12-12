@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
+import wasm from 'vite-plugin-wasm';
 
 export default defineConfig({
   base: '/ara3d-webgl/',
@@ -23,10 +24,13 @@ export default defineConfig({
         exampleGeometry: resolve(__dirname, 'examples/example-geometry.html'),
         exampleGltf: resolve(__dirname, 'examples/example-gltf-duck.html'),
         exampleBos: resolve(__dirname, 'examples/example-bos.html'),
+        exampleGltfDraco: resolve(__dirname, 'examples/example-gltf-draco.html'),
       },
     }
   },
+  plugins: [wasm()],
   optimizeDeps: {
+    exclude: ["parquet-wasm"],
     esbuildOptions: {
       target: 'es2021',          // or 'esnext'
       supported: {

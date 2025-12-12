@@ -123,6 +123,7 @@ export class Viewer {
 
   addObject (object: THREE.Object3D) {
     console.log("Adding object");
+    this.renderer._needsUpdate = true;
     if (!this.renderer.add(object)) {
       throw new Error("Could not load object")
     }
