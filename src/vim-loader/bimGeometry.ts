@@ -1,5 +1,3 @@
-import { Int32 } from "apache-arrow";
-
 export interface BimGeometry 
 {
   //========================================

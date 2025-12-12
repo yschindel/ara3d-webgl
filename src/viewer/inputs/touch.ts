@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { InputHandler } from './inputHandler'
 import { Viewer } from '../viewer'
-import { InputAction } from '../inputAction'
 
 /**
  * Manages user touch inputs.
@@ -53,15 +52,6 @@ export class TouchHandler extends InputHandler {
     const double =
       this._lastTapMs && time - this._lastTapMs < this.DOUBLE_TAP_DELAY_MS
     this._lastTapMs = new Date().getTime()
-
-    const action = new InputAction(
-      double ? 'double' : 'main',
-      'none',
-      position,
-      this._viewer.raycaster
-    )
-
-    this._viewer.inputs.MainAction(action)
   }
 
   private onTouchStart = (event: any) => {

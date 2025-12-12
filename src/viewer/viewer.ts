@@ -6,21 +6,14 @@ import { Camera } from './camera/camera'
 import { Input } from './inputs/input'
 import { Environment, IEnvironment } from './environment'
 import { GizmoOrbit } from './gizmos/gizmoOrbit'
-import { RenderScene } from './rendering/renderScene'
 import { Viewport } from './viewport'
 import { Renderer } from './rendering/renderer'
-import { GizmoGrid, Materials } from '../index'
 
 export class Viewer {
   settings: Settings
   renderer: Renderer
   viewport: Viewport
   inputs: Input
-  grid: GizmoGrid
-
-  get materials() : Materials {
-    return Materials.getInstance()
-  }
 
   get camera () {
     return this._camera
@@ -36,17 +29,16 @@ export class Viewer {
   private _running = false
   private _updateId: number | null = null
   private _clock = new THREE.Clock()
+  private _scene = new THREE.Scene()
 
   constructor (options?: PartialSettings) {
     this.settings = getSettings(options)
 
-    const scene = new RenderScene()
     this.viewport = new Viewport(this.settings)
-    this._camera = new Camera(scene, this.viewport, this.settings)
+    this._camera = new Camera(this.viewport, this.settings)
     this.renderer = new Renderer(
-      scene,
+      this._scene,
       this.viewport,
-      this.materials,
       this._camera,
       this.settings
     )
@@ -61,10 +53,6 @@ export class Viewer {
         this.settings
       )
     }
-    this.materials.applySettings(this.settings.materials)
-
-
-    this.grid = new GizmoGrid(this.renderer)
 
     this._environment = new Environment(this.settings)
     this._environment.getObjects().forEach((o) => this.renderer.add(o))
@@ -124,6 +112,5 @@ export class Viewer {
     this.viewport.dispose()
     this.renderer.dispose()
     this.inputs.unregisterAll()
-    this.materials.dispose()
   }
 }

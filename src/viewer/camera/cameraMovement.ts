@@ -1,9 +1,4 @@
-/**
- * @module viw-webgl-viewer/camera
- */
-
 import { Camera } from './camera'
-import { VimObject } from '../../index'
 import * as THREE from 'three'
 
 export abstract class CameraMovement {
@@ -62,22 +57,16 @@ export abstract class CameraMovement {
     this.orbit(angle)
   }
 
-  abstract target(target: VimObject | THREE.Vector3): void
+  abstract target(target: THREE.Vector3): void
 
   abstract reset(): void
 
   abstract set(position: THREE.Vector3, target?: THREE.Vector3)
 
   frame (
-    target: VimObject | THREE.Sphere | THREE.Box3 | 'all' | undefined,
+    target:  THREE.Sphere | THREE.Box3 | 'all' | undefined,
     forward?: THREE.Vector3
   ): void {
-    if (target instanceof VimObject) {
-      target = target.getBoundingBox()
-    }
-    if (target === 'all') {
-      target = this._camera._scene.getBoundingBox()
-    }
     if (target instanceof THREE.Box3) {
       target = target.getBoundingSphere(new THREE.Sphere())
     }

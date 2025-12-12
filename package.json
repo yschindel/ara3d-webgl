@@ -1,6 +1,6 @@
 {
   "name": "ara3d-webgl",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "A 3D viewer designed for large architectural (BIM) models built on top of Three.JS.",
   "files": [
     "dist"
@@ -48,17 +48,14 @@
   },
   "dependencies": {
     "@types/node": "^18.11.11",
-    "apache-arrow": "^21.1.0",
     "deepmerge": "^4.2.2",
     "hyparquet": "^1.23.0",
     "hyparquet-compressors": "^1.1.1",
     "jszip": "^3.10.1",
-    "parquet-wasm": "^0.7.1",
     "ste-events": "^3.0.7",
     "ste-signals": "^3.0.9",
     "ste-simple-events": "^3.0.7",
-    "three": "0.143.0",
-    "vim-format": "1.0.6-dev.18"
+    "three": "0.143.0"
   },
   "keywords": [
     "3d",

@@ -5,8 +5,6 @@
 import * as THREE from 'three'
 import deepmerge from 'deepmerge'
 import { floor } from '../images'
-import { GizmoOptions } from './gizmos/gizmoAxes'
-import { MaterialSettings } from '../materials/materials'
 
 export type TextureEncoding = 'url' | 'base64' | undefined
 export { GizmoOptions } from './gizmos/gizmoAxes'
@@ -113,13 +111,6 @@ export type Settings = {
     intensity: number
   }
 
-  materials: MaterialSettings
-
-  /**
-   * Axes gizmo options
-   */
-  axes: Partial<GizmoOptions>
-
   /**
    * Sunlight (directional light) options
    */
@@ -192,28 +183,6 @@ const defaultConfig: Settings = {
       intensity: 0.2
     }
   ],
-  materials: {
-    highlight: {
-      color: new THREE.Color(0x6a, 0xd2, 0xff),
-      opacity: 0.5
-    },
-    isolation: {
-      color: new THREE.Color('#4E525C'),
-      opacity: 0.08
-    },
-    section: {
-      strokeWidth: 0.01,
-      strokeFalloff: 0.75,
-      strokeColor: new THREE.Color(0xf6, 0xf6, 0xf6)
-    },
-    outline: {
-      intensity: 3,
-      falloff: 3,
-      blur: 2,
-      color: new THREE.Color(0, 1, 1)
-    }
-  },
-  axes: new GizmoOptions(),
   rendering: {
     onDemand: true
   }

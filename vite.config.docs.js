@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
-import wasm from 'vite-plugin-wasm';
 
 export default defineConfig({
   base: '/ara3d-webgl/',
@@ -14,23 +13,14 @@ export default defineConfig({
     rollupOptions: {
       input: {
         input: resolve(__dirname, 'examples/index.html'),
-        exampleBasic: resolve(__dirname, 'examples/example-basic.html'),
-        exampleColors: resolve(__dirname, 'examples/example-colors.html'),
-        exampleIsolation: resolve(__dirname, 'examples/example-isolation.html'),
-        exampleMultiVim: resolve(__dirname, 'examples/example-multivim.html'),
-        exampleOutline: resolve(__dirname, 'examples/example-outline.html'),
-        exampleSectionBox: resolve(__dirname, 'examples/example-sectionbox.html'),
-        exampleVisibility: resolve(__dirname, 'examples/example-visibility.html'),
         exampleGeometry: resolve(__dirname, 'examples/example-geometry.html'),
         exampleGltf: resolve(__dirname, 'examples/example-gltf-duck.html'),
-        exampleBos: resolve(__dirname, 'examples/example-bos.html'),
         exampleGltfDraco: resolve(__dirname, 'examples/example-gltf-draco.html'),
+        exampleBos: resolve(__dirname, 'examples/example-bos.html'),
       },
     }
   },
-  plugins: [wasm()],
   optimizeDeps: {
-    exclude: ["parquet-wasm"],
     esbuildOptions: {
       target: 'es2021',          // or 'esnext'
       supported: {

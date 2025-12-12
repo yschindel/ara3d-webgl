@@ -1,12 +1,7 @@
-/**
- * @module viw-webgl-viewer/camera
- */
-
 import * as THREE from 'three'
 
 import { Viewport } from '../viewport'
 import { Settings } from '../viewerSettings'
-import { RenderScene } from '../rendering/renderScene'
 import { clamp } from 'three/src/math/MathUtils'
 import { ISignal, SignalDispatcher } from 'ste-signals'
 import { PerspectiveWrapper } from './perspective'
@@ -23,7 +18,6 @@ export class Camera {
   camOrthographic: OrthographicWrapper
 
   private _viewport: Viewport
-  _scene: RenderScene // make private again
   private _lerp: CameraLerp
   private _movement: CameraMovementDo
 
@@ -110,7 +104,7 @@ export class Camera {
   private _velocityBlendFactor: number = 0.0001
   private _moveSpeed: number = 1
 
-  constructor (scene: RenderScene, viewport: Viewport, settings: Settings) {
+  constructor (viewport: Viewport, settings: Settings) {
     this.camPerspective = new PerspectiveWrapper(new THREE.PerspectiveCamera())
 
     this.camOrthographic = new OrthographicWrapper(
@@ -120,7 +114,6 @@ export class Camera {
     this._movement = new CameraMovementDo(this)
     this._lerp = new CameraLerp(this, this._movement)
 
-    this._scene = scene
     this._viewport = viewport
 
     this.applySettings(settings)

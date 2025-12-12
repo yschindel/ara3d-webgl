@@ -1,10 +1,5 @@
-/**
- * @module viw-webgl-viewer/camera
- */
-
 import * as THREE from 'three'
 import { Camera } from './camera'
-import { VimObject } from '../../index'
 import { CameraMovementDo } from './cameraMovementDo'
 import { CameraMovement } from './cameraMovement'
 
@@ -124,8 +119,8 @@ export class CameraLerp extends CameraMovement {
     }
   }
 
-  target (target: VimObject | THREE.Vector3): void {
-    const pos = target instanceof VimObject ? target.getCenter() : target
+  target (target: THREE.Vector3): void {
+    const pos = target
     const next = pos.clone().sub(this._camera.position)
     const start = this._camera.quaternion.clone()
     const rot = new THREE.Quaternion().setFromUnitVectors(

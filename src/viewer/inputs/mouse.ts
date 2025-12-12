@@ -1,12 +1,6 @@
-/**
- * @module viw-webgl-viewer/inputs
- */
-
-
 import * as THREE from 'three'
 import { InputHandler } from './inputHandler'
 import { Viewer } from '../viewer'
-import { InputAction } from '../inputAction'
 
 type Button = 'main' | 'middle' | 'right' | undefined
 type Modifier = 'ctrl' | 'shift' | 'none'
@@ -77,7 +71,6 @@ export class MouseHandler extends InputHandler {
 
   private resetIdle () {
     if (this._idlePosition) {
-      this._viewer.inputs.IdleAction(undefined)
       this._idlePosition = undefined
     }
     clearTimeout(this._idleTimeout)
