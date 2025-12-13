@@ -1,5 +1,5 @@
 import { V as Viewer } from "./compressors.f6880dca.js";
-import { B as BimOpenSchemaLoader } from "./bimOpenSchemaLoader.57a1eeee.js";
+import { B as BimOpenSchemaLoader } from "./bimOpenSchemaLoader.8135e0a5.js";
 async function runExample() {
   const viewer = new Viewer();
   const loader = new BimOpenSchemaLoader();
@@ -11,4 +11,4 @@ async function runExample() {
   console.timeEnd("Add object to viewer");
 }
 runExample();
-//# sourceMappingURL=exampleBos.411bec1a.js.map
+//# sourceMappingURL=exampleBos.fb21b3b9.js.map

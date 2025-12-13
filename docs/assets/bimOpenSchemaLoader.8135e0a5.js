@@ -1,4 +1,4 @@
-import { W as Group, I as InstancedMesh, ah as StaticDrawUsage, j as Matrix4, E as Mesh, k as Vector3, Q as Quaternion, z as BufferGeometry, B as BufferAttribute, w as MeshStandardMaterial, C as Color, x as DoubleSide, ai as JSZip, aj as compressors } from "./compressors.f6880dca.js";
+import { W as Group, j as Matrix4, E as Mesh, k as Vector3, Q as Quaternion, z as BufferGeometry, B as BufferAttribute, w as MeshStandardMaterial, C as Color, x as DoubleSide, I as InstancedMesh, ah as StaticDrawUsage, ai as JSZip, aj as compressors } from "./compressors.f6880dca.js";
 const ParquetTypes = [
   "BOOLEAN",
   "INT32",
@@ -1937,118 +1937,77 @@ function parquetReadAsync(options) {
   options.file = prefetchAsyncBuffer(options.file, plan);
   return plan.groups.map((groupPlan) => readRowGroup(options, plan, groupPlan));
 }
-function buildGeometryGroup(bim) {
-  console.time("Creating geometry group");
+function buildGeometry(bim) {
+  console.time("Building geometry");
   const root = new Group();
   const vertexCount = bim.VertexX.length;
   const indexCount = bim.IndexBuffer.length;
   const meshCount = bim.MeshVertexOffset.length;
-  const matCount = bim.MaterialRed.length;
-  const elementCount = bim.ElementMeshIndex.length;
+  const materialCount = bim.MaterialRed.length;
+  const instanceCount = bim.InstanceMeshIndex.length;
   const transformCount = bim.TransformTX.length;
-  console.log({ vertexCount, indexCount, meshCount, matCount, elementCount, transformCount });
-  const transformMatrices = computeTransforms(bim);
-  const meshGeometries = computeMeshGeometries(bim);
+  console.log({ vertexCount, indexCount, meshCount, materialCount, instanceCount, transformCount });
+  const transforms = computeTransforms(bim);
+  const geometries = computeMeshGeometries(bim);
   const materials = computeMaterials(bim);
-  console.time("Grouping elements");
-  const buckets = /* @__PURE__ */ new Map();
-  for (let ei = 0; ei < elementCount; ei++) {
-    const meshIndex = bim.ElementMeshIndex[ei];
-    const materialIndex = bim.ElementMaterialIndex[ei];
-    if (meshIndex < 0 || meshIndex >= meshCount)
-      continue;
-    if (materialIndex < 0 || materialIndex >= matCount)
-      continue;
-    if (!meshGeometries[meshIndex])
-      continue;
-    const key = `${meshIndex}|${materialIndex}`;
-    let bucket = buckets.get(key);
-    if (!bucket) {
-      bucket = { meshIndex, materialIndex, elementIndices: [] };
-      buckets.set(key, bucket);
-    }
-    bucket.elementIndices.push(ei);
+  const instanceGroups = groupInstances(bim);
+  console.log("Created %d instance groups", instanceGroups.length);
+  const materialGroups = gatherSingleInstancesByMaterial(instanceGroups);
+  console.log("Created %d material groups", Array.from(materialGroups.keys()).length);
+  const instancedMeshes = createInstances(bim, geometries, materials, transforms, instanceGroups);
+  console.log("Created %d instanced meshes", instancedMeshes.length);
+  const nonInstancedMeshes = createMergedAndSingleMeshes(bim, geometries, materials, transforms, materialGroups);
+  console.log("Create %d merged meshes", nonInstancedMeshes.length);
+  let polyCount = 0;
+  for (const im of instancedMeshes) {
+    polyCount += im.geometry.index.count / 3 * im.count;
+    root.add(im);
   }
-  console.timeEnd("Grouping elements");
-  const staticByMaterial = /* @__PURE__ */ new Map();
-  console.time("Creating instanced meshes");
-  for (const [, bucket] of buckets) {
-    const { meshIndex, materialIndex, elementIndices } = bucket;
-    const geom = meshGeometries[meshIndex];
-    if (!geom)
-      continue;
-    const material = materials[materialIndex];
-    const count = elementIndices.length;
-    if (count === 1) {
-      const ei = elementIndices[0];
-      const ti = bim.ElementTransformIndex[ei];
-      const entityIndex = bim.ElementEntityIndex[ei] ?? -1;
-      let list = staticByMaterial.get(materialIndex);
-      if (!list) {
-        list = [];
-        staticByMaterial.set(materialIndex, list);
-      }
-      list.push({
-        geom,
-        transformIndex: ti,
-        entityIndex,
-        meshIndex
-      });
-      continue;
-    }
-    const instanced = new InstancedMesh(geom, material, count);
-    instanced.instanceMatrix.setUsage(StaticDrawUsage);
-    for (let i = 0; i < count; i++) {
-      const ei = elementIndices[i];
-      const ti = bim.ElementTransformIndex[ei];
-      instanced.setMatrixAt(i, transformMatrices[ti]);
-    }
-    instanced.userData.meshIndex = meshIndex;
-    instanced.userData.materialIndex = materialIndex;
-    instanced.frustumCulled = false;
-    instanced.matrixAutoUpdate = false;
-    instanced.matrixWorldNeedsUpdate = false;
-    root.add(instanced);
+  for (const nim of nonInstancedMeshes) {
+    polyCount += nim.geometry.index.count / 3;
+    root.add(nim);
   }
-  console.timeEnd("Creating instanced meshes");
-  console.time("Merging static meshes by material");
+  console.log("Total polygon count = %d", polyCount);
+  root.rotation.x = -Math.PI / 2;
+  console.timeEnd("Building geometry");
+  return root;
+}
+function createMergedAndSingleMeshes(bim, geometries, materials, transforms, materialGroups) {
   const identity = new Matrix4();
-  for (const [materialIndex, entries] of staticByMaterial) {
+  const r = [];
+  for (const [materialIndex, entries] of materialGroups) {
     if (!entries || entries.length === 0)
       continue;
     const material = materials[materialIndex];
     if (entries.length === 1) {
-      const { geom, transformIndex } = entries[0];
-      const matrix = transformMatrices[transformIndex];
+      const ii = entries[0];
+      const meshIndex = bim.InstanceMeshIndex[ii];
+      const transformIndex = bim.InstanceTransformIndex[ii];
+      const geom = geometries[meshIndex];
+      const matrix = transforms[transformIndex];
       const mesh = new Mesh(geom, material);
       mesh.matrixAutoUpdate = false;
       mesh.matrix.copy(matrix);
-      root.add(mesh);
+      r.push(mesh);
       continue;
     }
     const geomsToMerge = [];
-    for (const entry of entries) {
-      const { geom, transformIndex } = entry;
-      const m = transformMatrices[transformIndex];
-      const g = geom.clone();
-      if (!m.equals(identity)) {
-        g.applyMatrix4(m);
+    for (const ii of entries) {
+      const meshIndex = bim.InstanceMeshIndex[ii];
+      const transformIndex = bim.InstanceTransformIndex[ii];
+      const geom = geometries[meshIndex];
+      const matrix = transforms[transformIndex];
+      if (!matrix.equals(identity)) {
+        geom.applyMatrix4(matrix);
       }
-      geomsToMerge.push(g);
+      geomsToMerge.push(geom);
     }
-    if (geomsToMerge.length === 0)
-      continue;
     const mergedGeometry = mergeGeometries(geomsToMerge);
     const mergedMesh = new Mesh(mergedGeometry, material);
     mergedMesh.name = `MergedStatic_Material_${materialIndex}`;
-    root.add(mergedMesh);
-    for (const g of geomsToMerge)
-      g.dispose?.();
+    r.push(mergedMesh);
   }
-  console.timeEnd("Merging static meshes by material");
-  root.rotation.x = -Math.PI / 2;
-  console.timeEnd("Creating geometry group");
-  return root;
+  return r;
 }
 function computeTransforms(bim) {
   const {
@@ -2095,10 +2054,6 @@ function mergeGeometries(geometries) {
     const geometry = geometries[i];
     const index = geometry.getIndex();
     const position = geometry.getAttribute("position");
-    if (!index)
-      throw new Error("mergeGeometries: geometry has no index buffer");
-    if (!position)
-      throw new Error("mergeGeometries: geometry has no position attribute");
     indexCount += index.count;
     posCount += position.count;
   }
@@ -2128,6 +2083,23 @@ function mergeGeometries(geometries) {
   mergedGeom.setAttribute("position", new BufferAttribute(mergedPositions, 3));
   mergedGeom.setIndex(new BufferAttribute(mergedIndices, 1));
   return mergedGeom;
+}
+function groupInstances(bim) {
+  const instanceCount = bim.InstanceEntityIndex.length;
+  const instanceGroupMap = /* @__PURE__ */ new Map();
+  for (let ii = 0; ii < instanceCount; ii++) {
+    const meshIndex = bim.InstanceMeshIndex[ii];
+    const materialIndex = bim.InstanceMaterialIndex[ii];
+    const key = `${meshIndex}|${materialIndex}`;
+    let group = instanceGroupMap.get(key);
+    if (!group) {
+      group = { meshIndex, materialIndex, instanceIndices: [ii] };
+      instanceGroupMap.set(key, group);
+    } else {
+      group.instanceIndices.push(ii);
+    }
+  }
+  return Array.from(instanceGroupMap.values());
 }
 function computeMeshGeometries(bim) {
   const meshCount = bim.MeshVertexOffset.length;
@@ -2189,6 +2161,47 @@ function computeMaterials(bim) {
   }
   return materials;
 }
+function gatherSingleInstancesByMaterial(instanceGroups) {
+  const r = /* @__PURE__ */ new Map();
+  for (const group of instanceGroups) {
+    const { materialIndex, instanceIndices } = group;
+    if (instanceIndices.length === 1) {
+      const ei = instanceIndices[0];
+      let list = r.get(materialIndex);
+      if (!list) {
+        list = [];
+        r.set(materialIndex, list);
+      }
+      list.push(ei);
+    }
+  }
+  return r;
+}
+function createInstances(bim, geometries, materials, transforms, instanceGroups) {
+  const r = new Array();
+  for (const group of instanceGroups) {
+    const { meshIndex, materialIndex, instanceIndices } = group;
+    const count = instanceIndices.length;
+    if (count <= 1)
+      continue;
+    const geom = geometries[meshIndex];
+    const material = materials[materialIndex];
+    const instanced = new InstancedMesh(geom, material, count);
+    instanced.instanceMatrix.setUsage(StaticDrawUsage);
+    for (let i = 0; i < count; i++) {
+      const ei = instanceIndices[i];
+      const ti = bim.InstanceTransformIndex[ei];
+      instanced.setMatrixAt(i, transforms[ti]);
+    }
+    instanced.userData.meshIndex = meshIndex;
+    instanced.userData.materialIndex = materialIndex;
+    instanced.frustumCulled = false;
+    instanced.matrixAutoUpdate = false;
+    instanced.matrixWorldNeedsUpdate = false;
+    r.push(instanced);
+  }
+  return r;
+}
 class BimOpenSchemaLoader {
   async load(source) {
     const response = await fetch(source);
@@ -2198,7 +2211,7 @@ class BimOpenSchemaLoader {
     const arrayBuffer = await response.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
     const bim = await loadBimGeometryFromZip(zip);
-    return buildGeometryGroup(bim);
+    return buildGeometry(bim);
   }
 }
 async function loadBimGeometryFromZip(zip) {
@@ -2236,4 +2249,4 @@ export {
   BimOpenSchemaLoader as B,
   loadBimGeometryFromZip as l
 };
-//# sourceMappingURL=bimOpenSchemaLoader.57a1eeee.js.map
+//# sourceMappingURL=bimOpenSchemaLoader.8135e0a5.js.map

@@ -21,13 +21,13 @@
     "dev": "vite --config vite.config.docs.js --host",
     "build:docs": "vite build --config vite.config.docs.js && npm run gentypes",
     "build:lib": "vite build --config vite.config.lib.js && npm run gentypes",
+    "preview:docs": "vite preview --mode github --config vite.config.docs.js --host",
     "serve:docs": "http-server ./docs -o --host",
     "eslint": "eslint --ext .js,.ts src --fix",
     "gentypes": "tsc --declaration --emitDeclarationOnly --outdir ./dist/types"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
-    "@types/three": "^0.182.0",
     "@typescript-eslint/eslint-plugin": "^5.45.1",
     "@typescript-eslint/parser": "^5.45.1",
     "eslint": "^8.29.0",
@@ -40,7 +40,7 @@
     "http-server": "^14",
     "opener": "^1.5.2",
     "prettier": "^2.8.0",
-    "typescript": "^4.9.3",
+    "typescript": "^5.9.3",
     "vite": "^3.2.5"
   },
   "dependencies": {
@@ -57,13 +57,16 @@
   "keywords": [
     "3d",
     "ara3d",
+    "ara 3d",
     "bim",
     "viewer",
     "three.js",
     "model",
     "aec",
-    "vim",
-    "g3d",
+    "BIM Open Schema",
+    "BIM",
+    "BOS",
+    ".bos",
     "loader",
     "webgl"
   ]

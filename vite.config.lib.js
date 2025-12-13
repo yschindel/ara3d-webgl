@@ -15,9 +15,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     esbuildOptions: {
-      target: 'es2021',          // or 'esnext'
+      target: 'es2021',        
       supported: {
-        bigint: true,            // tell esbuild BigInt is allowed
+        bigint: true,            
       },
     },
   }
