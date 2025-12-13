@@ -5,6 +5,7 @@ export default defineConfig({
   base: '/ara3d-webgl/',
   root: resolve(__dirname, 'examples'),
   build: {
+    target: ['es2021'], 
     outDir: resolve(__dirname, 'docs'),
     emptyOutDir: true,
     sourcemap: true,
@@ -12,16 +13,18 @@ export default defineConfig({
     rollupOptions: {
       input: {
         input: resolve(__dirname, 'examples/index.html'),
-        exampleBasic: resolve(__dirname, 'examples/example-basic.html'),
-        exampleColors: resolve(__dirname, 'examples/example-colors.html'),
-        exampleIsolation: resolve(__dirname, 'examples/example-isolation.html'),
-        exampleMultiVim: resolve(__dirname, 'examples/example-multivim.html'),
-        exampleOutline: resolve(__dirname, 'examples/example-outline.html'),
-        exampleSectionBox: resolve(__dirname, 'examples/example-sectionbox.html'),
-        exampleVisibility: resolve(__dirname, 'examples/example-visibility.html'),
         exampleGeometry: resolve(__dirname, 'examples/example-geometry.html'),
         exampleGltf: resolve(__dirname, 'examples/example-gltf-duck.html'),
+        exampleBos: resolve(__dirname, 'examples/example-bos.html'),
       },
     }
-  }
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2021',          // or 'esnext'
+      supported: {
+        bigint: true,            // tell esbuild BigInt is allowed
+      },
+    },
+  },
 })

@@ -1,14 +1,6 @@
-/**
- * @module viw-webgl-viewer/inputs
- */
-
-
 import * as THREE from 'three'
 import { InputHandler } from './inputHandler'
 
-/**
- * Key values for viewer
- */
 export const KEYS = {
   KEY_0: 48,
   KEY_1: 49,
@@ -105,10 +97,8 @@ const KeySet = new Set(Object.values(KEYS))
  * Manages keyboard user inputs
  */
 export class KeyboardHandler extends InputHandler {
-  // Settings
   private SHIFT_MULTIPLIER: number = 3.0
 
-  // State
   isUpPressed: boolean = false
   isDownPressed: boolean = false
   isLeftPressed: boolean = false

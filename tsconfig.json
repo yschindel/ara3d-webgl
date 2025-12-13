@@ -7,7 +7,7 @@
     "declaration": true,
     "sourceMap": true,
     "lib": ["esnext", "dom"],
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
   },
   "files": [
     "src/index.ts"

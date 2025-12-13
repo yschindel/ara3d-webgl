@@ -1,7 +1,3 @@
-/**
- @module viw-webgl-viewer
-*/
-
 import { SignalDispatcher } from 'ste-signals'
 import * as THREE from 'three'
 import { CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer'
@@ -41,7 +37,7 @@ export class Viewport {
     if (canvas) return [canvas, false]
 
     canvas = document.createElement('canvas')
-    canvas.className = 'vim-canvas'
+    canvas.className = 'ara3d-canvas'
     canvas.tabIndex = 0
     canvas.style.backgroundColor = 'black'
     document.body.appendChild(canvas)
@@ -51,6 +47,7 @@ export class Viewport {
 
   /** Returns a text renderer that will render html in an html element sibling to canvas */
   createTextRenderer () {
+    console.log("Creating text renderer");
     if (!this.canvas.parentElement) {
       throw new Error('Cannot create text renderer without a canvas')
     }
@@ -60,7 +57,7 @@ export class Viewport {
     renderer.setSize(size.x, size.y)
     this.text = renderer.domElement
 
-    this.text.className = 'vim-text-renderer'
+    this.text.className = 'ara3d-text-renderer'
     this.text.style.position = 'absolute'
     this.text.style.top = '0px'
     this.text.style.pointerEvents = 'none'

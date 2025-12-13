@@ -1,7 +1,3 @@
-/**
- * @module viw-webgl-viewer/camera
- */
-
 import * as THREE from 'three'
 import { Settings } from '../viewerSettings'
 

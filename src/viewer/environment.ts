@@ -1,14 +1,8 @@
-/**
- * @module viw-webgl-viewer
- */
-
 import * as THREE from 'three'
 import { TextureEncoding, Settings } from './viewerSettings'
 import { Box3 } from 'three'
 
-/**
- * Manages the THREE.Mesh for the ground plane
- */
+
 export class GroundPlane {
   mesh: THREE.Mesh
 
@@ -102,9 +96,6 @@ export class GroundPlane {
   }
 }
 
-/**
- * Manages ground plane and lights that are part of the THREE.Scene to render but not part of the Vims.
- */
 export class Environment {
   skyLight: THREE.HemisphereLight
   sunLights: THREE.DirectionalLight[]
