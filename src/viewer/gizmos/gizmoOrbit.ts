@@ -145,7 +145,7 @@ export class GizmoOrbit {
       this._material!.opacity = MathUtils.lerp(0, this._opacity, t)
       this._materialAlways!.opacity = MathUtils.lerp(0, this._opacityAlways, t)
     }
-    this._renderer._needsUpdate = true
+    this._renderer.needsUpdate = true
   }
 
   /**

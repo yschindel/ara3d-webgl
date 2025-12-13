@@ -41,25 +41,29 @@ export async function loadBimGeometryFromZip(zip: JSZip): Promise<BimGeometry>
 
   // Read the table, and put the columns directly
   async function readParquetTable(name: string, bimObject: any, ctor: any) {
-    console.time(name);
     const entryName = findFileEndingWith(name);
     const file = await zip.files[entryName].async('arraybuffer');
     const metadata = await parquetMetadataAsync(file);
     await parquetRead({file, compressors, metadata, onChunk(chunk: ColumnData) {
       let data = chunk.columnData;
-      console.log(chunk.columnName, data.constructor.name);
+      if (data.constructor.name != ctor.name)
+      {
+        // Some arrays are typed, and some aren't. Don't ask me why?! 
+        data = new ctor(data);         
+      }
       bimObject[chunk.columnName] = ctor ? new ctor(data) : ctor;
     }});
-    console.timeEnd(name);
   }
 
+  console.time("Reading parquet tables");
   const bim = {}
   await readParquetTable('Elements.parquet', bim, Int32Array);
   await readParquetTable('VertexBuffer.parquet', bim, Int32Array);
-  await readParquetTable('IndexBuffer.parquet', bim, Int32Array);
+  await readParquetTable('IndexBuffer.parquet', bim, Uint32Array);
   await readParquetTable('Meshes.parquet', bim, Int32Array);
   await readParquetTable('Materials.parquet', bim, Uint8Array);
   await readParquetTable('Transforms.parquet', bim, Float32Array);  
+  console.timeEnd("Reading parquet tables");
   return bim as BimGeometry;
 }
 

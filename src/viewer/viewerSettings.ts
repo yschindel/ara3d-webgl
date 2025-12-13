@@ -1,7 +1,3 @@
-/**
- @module viw-webgl-viewer
-*/
-
 import * as THREE from 'three'
 import deepmerge from 'deepmerge'
 import { floor } from '../images'

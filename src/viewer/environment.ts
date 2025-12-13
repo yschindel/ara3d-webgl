@@ -102,9 +102,6 @@ export class GroundPlane {
   }
 }
 
-/**
- * Manages ground plane and lights that are part of the THREE.Scene to render but not part of the Vims.
- */
 export class Environment {
   skyLight: THREE.HemisphereLight
   sunLights: THREE.DirectionalLight[]
