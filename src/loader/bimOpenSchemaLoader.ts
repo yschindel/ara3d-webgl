@@ -3,7 +3,7 @@ import JSZip from 'jszip';
 import { parquetRead, parquetMetadataAsync, parquetSchema, ColumnData, parquetReadObjects, ParquetReadOptions } from 'hyparquet';
 import { compressors } from 'hyparquet-compressors';
 import { BimGeometry } from './bimGeometry';
-import { buildGeometryGroup } from './buildGeometryGroup';
+import { buildGeometry } from './buildGeometryGroup';
 
 /**
  * Loader that takes a URL to a .ZIP or .BOS file containing BIM Open Schema geometry parquet tables:
@@ -19,7 +19,7 @@ export class BimOpenSchemaLoader
     const arrayBuffer = await response.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
     const bim = await loadBimGeometryFromZip(zip);
-    return buildGeometryGroup(bim);
+    return buildGeometry(bim);
   }
 }
 
@@ -57,7 +57,7 @@ export async function loadBimGeometryFromZip(zip: JSZip): Promise<BimGeometry>
 
   console.time("Reading parquet tables");
   const bim = {}
-  await readParquetTable('Elements.parquet', bim, Int32Array);
+  await readParquetTable('Instances.parquet', bim, Int32Array);
   await readParquetTable('VertexBuffer.parquet', bim, Int32Array);
   await readParquetTable('IndexBuffer.parquet', bim, Uint32Array);
   await readParquetTable('Meshes.parquet', bim, Int32Array);

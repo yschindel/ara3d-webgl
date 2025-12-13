@@ -1,20 +1,20 @@
 export interface BimGeometry 
 {
   //========================================
-  // Elements table
+  // Instances table
   //========================================
   
-  // Index of the entity associated with each element. Used for looking up meta data. 
-  ElementEntityIndex: Int32Array;
+  // Index of the entity associated with each instance. Used for looking up meta data. 
+  InstanceEntityIndex: Int32Array;
 
-  // Indedx of the material associated with each element. 
-  ElementMaterialIndex: Int32Array;
+  // Indedx of the material associated with each instance. 
+  InstanceMaterialIndex: Int32Array;
 
-  // Index of the mesh associated with each element
-  ElementMeshIndex: Int32Array;
+  // Index of the mesh associated with each instance
+  InstanceMeshIndex: Int32Array;
 
-  // Index of the transform associated with each element
-  ElementTransformIndex: Int32Array;
+  // Index of the transform associated with each instance
+  InstanceTransformIndex: Int32Array;
 
   //========================================
   // VertexBuffer table

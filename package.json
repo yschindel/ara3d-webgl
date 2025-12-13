@@ -19,11 +19,10 @@
   },
   "scripts": {
     "dev": "vite --config vite.config.docs.js --host",
-    "build:docs": "vite build --config vite.config.docs.js && npm run gentypes && npm run gendoc",
+    "build:docs": "vite build --config vite.config.docs.js && npm run gentypes",
     "build:lib": "vite build --config vite.config.lib.js && npm run gentypes",
     "serve:docs": "http-server ./docs -o --host",
     "eslint": "eslint --ext .js,.ts src --fix",
-    "gendoc": "typedoc --entryPointStrategy expand --mergeModulesMergeMode module --out docs/api --excludePrivate ./src",
     "gentypes": "tsc --declaration --emitDeclarationOnly --outdir ./dist/types"
   },
   "devDependencies": {
@@ -41,8 +40,6 @@
     "http-server": "^14",
     "opener": "^1.5.2",
     "prettier": "^2.8.0",
-    "typedoc": "^0.23.21",
-    "typedoc-plugin-merge-modules": "^4.0.1",
     "typescript": "^4.9.3",
     "vite": "^3.2.5"
   },

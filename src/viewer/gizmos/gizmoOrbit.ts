@@ -1,6 +1,3 @@
-/**
- * @module viw-webgl-viewer/gizmos
- */
 import * as THREE from 'three'
 import { MathUtils } from 'three'
 import { Renderer } from '../rendering/renderer'

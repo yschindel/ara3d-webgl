@@ -2,9 +2,6 @@ import * as THREE from 'three'
 import { InputHandler } from './inputHandler'
 import { Viewer } from '../viewer'
 
-/**
- * Manages user touch inputs.
- */
 export class TouchHandler extends InputHandler {
   private readonly TAP_DURATION_MS: number = 500
   private readonly DOUBLE_TAP_DELAY_MS = 500
