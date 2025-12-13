@@ -16,7 +16,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
   console.log({ vertexCount, indexCount, meshCount, matCount, elementCount, transformCount });
 
   const transformMatrices = computeTransforms(bim);
-  const meshGeometries = computeMeshGeoemtries(bim);
+  const meshGeometries = computeMeshGeometries(bim);
   const materials = computeMaterials(bim);
 
   // ---------- 4. Group elements by (meshIndex, materialIndex) ----------
@@ -101,10 +101,12 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
       instanced.setMatrixAt(i, transformMatrices[ti]);
     }
 
-    instanced.instanceMatrix.needsUpdate = true;
+    //instanced.instanceMatrix.needsUpdate = true;
     (instanced.userData as any).meshIndex = meshIndex;
     (instanced.userData as any).materialIndex = materialIndex;
-
+    instanced.frustumCulled = false;
+    instanced.matrixAutoUpdate = false;
+    instanced.matrixWorldNeedsUpdate = false;
     root.add(instanced);
   }
 
@@ -114,7 +116,10 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
   const identity = new THREE.Matrix4();
   for (const [materialIndex, entries] of staticByMaterial) 
   {
-    if (entries.length === 0) continue;
+    if (entries.length === 0) 
+    {
+      continue;
+    }
 
     // NOTE: what if entries.length === 1?
 
@@ -123,17 +128,11 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
     for (const entry of entries) {
       const { geom, transformIndex } = entry;
       const m = transformMatrices[transformIndex];
-
-      // TODO: can I skip cloning if the matrix is the identity matrix? 
-      // Clone geometry and bake transform into positions
-      const cloned = geom.clone();
-      if (!m.equals(identity)) {
-        cloned.applyMatrix4(m);
-      }
-      geomsToMerge.push(cloned);
+      if (!m.equals(identity)) 
+        geom.applyMatrix4(m);
+      geomsToMerge.push(geom);
     }
 
-    if (geomsToMerge.length === 0) continue;
     const mergedGeometry = mergeGeometries(geomsToMerge);
     const mergedMesh = new THREE.Mesh(mergedGeometry, material);
     mergedMesh.name = `MergedStatic_Material_${materialIndex}`;
@@ -145,10 +144,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
   console.timeEnd('Merging static meshes by material');
 
   // ---------- 8. Final orientation ----------
-  console.time('Converting Z-up to Y-up');
   root.rotation.x = -Math.PI / 2;
-  console.timeEnd('Converting Z-up to Y-up');
-
   console.timeEnd("Creating geometry group");
   return root;
 }
@@ -265,7 +261,7 @@ export function mergeGeometries(
   return mergedGeom;
 }
 
-function computeMeshGeoemtries(bim: BimGeometry): Array<THREE.BufferGeometry>
+function computeMeshGeometries(bim: BimGeometry): Array<THREE.BufferGeometry>
 {
   const meshCount = bim.MeshVertexOffset.length;
   const indexCount = bim.IndexBuffer.length;
