@@ -19,7 +19,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
   const meshGeometries = computeMeshGeometries(bim);
   const materials = computeMaterials(bim);
 
-  // ---------- 4. Group elements by (meshIndex, materialIndex) ----------
+  // ---------- Group elements by (meshIndex, materialIndex) ----------
   console.time('Grouping elements');
   type Bucket = {
     meshIndex: number;
@@ -47,7 +47,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
   }
   console.timeEnd('Grouping elements');
 
-  // ---------- 5. Prepare static merge data (singletons) ----------
+  // ---------- Prepare static merge data (singletons) ----------
   type StaticEntry = {
     geom: THREE.BufferGeometry;
     transformIndex: number;
@@ -58,7 +58,7 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
   // materialIndex -> static entries
   const staticByMaterial = new Map<number, StaticEntry[]>();
 
-  // ---------- 6. Create instanced meshes, collect static entries ----------
+  // ---------- Create instanced meshes and collect static entries ----------
   console.time('Creating instanced meshes');
 
   for (const [, bucket] of buckets) {
@@ -70,7 +70,6 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
     const count = elementIndices.length;
 
     if (count === 1) {
-      // Defer creating Mesh; just record for merging
       const ei = elementIndices[0];
       const ti = bim.ElementTransformIndex[ei];
       const entityIndex = bim.ElementEntityIndex[ei] ?? -1;
@@ -91,7 +90,6 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
       continue;
     }
 
-    // Multi-instance: InstancedMesh as before
     const instanced = new THREE.InstancedMesh(geom, material, count);
     instanced.instanceMatrix.setUsage(THREE.StaticDrawUsage);
 
@@ -101,7 +99,6 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
       instanced.setMatrixAt(i, transformMatrices[ti]);
     }
 
-    //instanced.instanceMatrix.needsUpdate = true;
     (instanced.userData as any).meshIndex = meshIndex;
     (instanced.userData as any).materialIndex = materialIndex;
     instanced.frustumCulled = false;
@@ -117,11 +114,19 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
   for (const [materialIndex, entries] of staticByMaterial) 
   {
     if (entries.length === 0) 
+      continue;
+
+    if (entries.length === 1)
     {
+      console.log("Single mesh");
+      const { geom, transformIndex } = entries[0];
+      const matrix = transformMatrices[transformIndex];
+      const material = materials[materialIndex];
+      const mesh = new THREE.Mesh(geom, material);
+      mesh.matrixWorld = matrix;
+      root.add(matrix);
       continue;
     }
-
-    // NOTE: what if entries.length === 1?
 
     const material = materials[materialIndex];
     const geomsToMerge: THREE.BufferGeometry[] = [];
@@ -136,15 +141,14 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
     const mergedGeometry = mergeGeometries(geomsToMerge);
     const mergedMesh = new THREE.Mesh(mergedGeometry, material);
     mergedMesh.name = `MergedStatic_Material_${materialIndex}`;
-    // If you want per-element picking for static geometry,
-    // you can store a parallel array of entity indices here in userData.
     root.add(mergedMesh);
   }
 
   console.timeEnd('Merging static meshes by material');
 
-  // ---------- 8. Final orientation ----------
+  // Convert Z-Up to Y-Up 
   root.rotation.x = -Math.PI / 2;
+
   console.timeEnd("Creating geometry group");
   return root;
 }
