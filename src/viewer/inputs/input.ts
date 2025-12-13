@@ -1,7 +1,3 @@
-/**
- * @module viw-webgl-viewer/inputs
- */
-
 import * as THREE from 'three'
 import { Viewer } from '../viewer'
 import { KeyboardHandler, KEYS } from './keyboard'
@@ -14,9 +10,6 @@ export { KEYS } from './keyboard'
 /** Pointers mode supported by the viewer */
 export type PointerMode = 'orbit' | 'look' | 'pan' | 'zoom' | 'rect'
 
-/**
- * Vim viewer default input scheme
- */
 export class DefaultInputScheme {
   private _viewer: Viewer
 
@@ -62,20 +55,10 @@ export class DefaultInputScheme {
  * Manages and registers all viewer user inputs for mouse, keyboard and touch
  */
 export class Input {
-  // Dependencies
   private _viewer: Viewer
-
-  /**
-   * Touch input handler
-   */
+  private _scheme: DefaultInputScheme 
   touch: TouchHandler
-  /**
-   * Mouse input handler
-   */
   mouse: MouseHandler
-  /**
-   * Keyboard input handler
-   */
   keyboard: KeyboardHandler
 
   private _pointerActive: PointerMode = 'orbit'
@@ -84,6 +67,7 @@ export class Input {
 
   constructor (viewer: Viewer) {
     this._viewer = viewer
+    this._scheme = new DefaultInputScheme(viewer);
 
     this.keyboard = new KeyboardHandler(viewer)
     this.mouse = new MouseHandler(viewer)
@@ -137,6 +121,7 @@ export class Input {
   }
 
   private _onPointerModeChanged = new SignalDispatcher()
+  
   /**
    * Event called when pointer interaction mode changes.
    */
@@ -145,6 +130,7 @@ export class Input {
   }
 
   private _onPointerOverrideChanged = new SignalDispatcher()
+  
   /**
    * Event called when the pointer is temporarily overriden.
    */
@@ -156,57 +142,35 @@ export class Input {
     THREE.Vector2 | undefined
   >()
 
-  /**
-   * Event called when when context menu could be displayed
-   */
   get onContextMenu () {
     return this._onContextMenu.asEvent()
   }
 
-  private _scheme: DefaultInputScheme
 
-  /**
-   * Get or set the current viewer input scheme, set undefined to revert to default.
-   */
   get scheme () {
     return this._scheme
   }
 
-  /**
-   * Calls key action on the current input scheme
-   */
   KeyAction (key: number) {
     return this._scheme.onKeyAction(key)
   }
 
-  /**
-   * Calls context menu action
-   */
   ContextMenu (position: THREE.Vector2 | undefined) {
     this._onContextMenu.dispatch(position)
   }
 
-  /**
-   * Register inputs handlers for default viewer behavior
-   */
   registerAll () {
     this.keyboard.register()
     this.mouse.register()
     this.touch.register()
   }
 
-  /**
-   * Unregisters all input handlers
-   */
   unregisterAll = () => {
     this.mouse.unregister()
     this.keyboard.unregister()
     this.touch.unregister()
   }
 
-  /**
-   * Resets all input state
-   */
   resetAll () {
     this.mouse.reset()
     this.keyboard.reset()

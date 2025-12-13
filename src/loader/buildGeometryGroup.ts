@@ -111,38 +111,107 @@ export function buildGeometryGroup(bim: BimGeometry): THREE.Group
 
   console.time('Merging static meshes by material');
   const identity = new THREE.Matrix4();
+  const useBatchedMesh = false; 
+
   for (const [materialIndex, entries] of staticByMaterial) 
   {
-    if (entries.length === 0) 
-      continue;
-
-    if (entries.length === 1)
-    {
-      console.log("Single mesh");
-      const { geom, transformIndex } = entries[0];
-      const matrix = transformMatrices[transformIndex];
-      const material = materials[materialIndex];
-      const mesh = new THREE.Mesh(geom, material);
-      mesh.matrixWorld = matrix;
-      root.add(matrix);
-      continue;
-    }
+    if (!entries || entries.length === 0) continue;
 
     const material = materials[materialIndex];
-    const geomsToMerge: THREE.BufferGeometry[] = [];
-    for (const entry of entries) {
-      const { geom, transformIndex } = entry;
-      const m = transformMatrices[transformIndex];
-      if (!m.equals(identity)) 
-        geom.applyMatrix4(m);
-      geomsToMerge.push(geom);
+
+    // --- Option A: BatchedMesh (keeps per-entry transforms, one-ish draw)
+    if (useBatchedMesh) {
+      // BatchedMesh wants a "prototype" geometry + material.
+      // It then lets you add geometries (sub-meshes) with transforms.
+      //
+      // NOTE: API differs slightly across revisions; this pattern matches the common one:
+      //   const batched = new THREE.BatchedMesh(maxInstances, maxVertices, maxIndices, material)
+      //   const id = batched.addGeometry(geom) / add(geom, matrix) ...
+      //
+      // We'll compute maxima.
+      let maxVertices = 0;
+      let maxIndices = 0;
+
+      for (const e of entries) {
+        const pos = e.geom.getAttribute('position');
+        if (!pos) continue;
+        maxVertices += pos.count;
+
+        const index = e.geom.getIndex();
+        maxIndices += index ? index.count : pos.count; // non-indexed fallback
+      }
+
+      // If there’s nothing valid, skip
+      if (maxVertices === 0) continue;
+
+      // Create the batched mesh.
+      // Signature varies; this is the most common current form:
+      const batched = new THREE.BatchedMesh(
+        entries.length,      // max instance count (items)
+        maxVertices,         // max vertices across all items
+        maxIndices,          // max indices across all items
+        material
+      );
+
+      batched.name = `BatchedStatic_Material_${materialIndex}`;
+      batched.matrixAutoUpdate = false;
+
+      // Add each geometry with its transform
+      for (let i = 0; i < entries.length; i++) {
+        const { geom, transformIndex } = entries[i];
+        const m = transformMatrices[transformIndex];
+        let geometryId = batched.addGeometry(geom, m);
+        let instanceId = batched.addInstance(geometryId);
+        batched.setMatrixAt(instanceId, m);        
+      }
+    
+    batched.perObjectFrustumCulled = false;
+    batched.frustumCulled = false;
+    batched.matrixAutoUpdate = false;
+    batched.matrixWorldNeedsUpdate = false;
+    root.add(batched);
+    continue;
+  }
+
+  // --- Option B: MergeGeometries (bakes transforms, cheapest runtime)
+  if (entries.length === 1) {
+    const { geom, transformIndex } = entries[0];
+    const matrix = transformMatrices[transformIndex];
+
+    const mesh = new THREE.Mesh(geom, material);
+    mesh.matrixAutoUpdate = false;
+    mesh.matrix.copy(matrix); // set local matrix directly
+    root.add(mesh);
+    continue;
+  }
+
+  const geomsToMerge: THREE.BufferGeometry[] = [];
+
+  for (const entry of entries) {
+    const { geom, transformIndex } = entry;
+    const m = transformMatrices[transformIndex];
+
+    // IMPORTANT: do NOT mutate the original geometry
+    const g = geom.clone();
+
+    if (!m.equals(identity)) {
+      g.applyMatrix4(m);
     }
 
-    const mergedGeometry = mergeGeometries(geomsToMerge);
-    const mergedMesh = new THREE.Mesh(mergedGeometry, material);
-    mergedMesh.name = `MergedStatic_Material_${materialIndex}`;
-    root.add(mergedMesh);
+    geomsToMerge.push(g);
   }
+
+  if (geomsToMerge.length === 0) continue;
+
+  const mergedGeometry = mergeGeometries(geomsToMerge);
+  const mergedMesh = new THREE.Mesh(mergedGeometry, material);
+  mergedMesh.name = `MergedStatic_Material_${materialIndex}`;
+
+  root.add(mergedMesh);
+
+  // Optional: free clones if you don’t need them anymore
+  for (const g of geomsToMerge) g.dispose?.();
+}
 
   console.timeEnd('Merging static meshes by material');
 

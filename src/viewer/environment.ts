@@ -1,14 +1,8 @@
-/**
- * @module viw-webgl-viewer
- */
-
 import * as THREE from 'three'
 import { TextureEncoding, Settings } from './viewerSettings'
 import { Box3 } from 'three'
 
-/**
- * Manages the THREE.Mesh for the ground plane
- */
+
 export class GroundPlane {
   mesh: THREE.Mesh
 

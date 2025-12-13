@@ -15,7 +15,6 @@ export default defineConfig({
         input: resolve(__dirname, 'examples/index.html'),
         exampleGeometry: resolve(__dirname, 'examples/example-geometry.html'),
         exampleGltf: resolve(__dirname, 'examples/example-gltf-duck.html'),
-        exampleGltfDraco: resolve(__dirname, 'examples/example-gltf-draco.html'),
         exampleBos: resolve(__dirname, 'examples/example-bos.html'),
       },
     }

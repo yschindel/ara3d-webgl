@@ -1,7 +1,3 @@
-/**
- * @module viw-webgl-viewer/inputs
- */
-
 import { Viewer } from '../viewer'
 
 /**
