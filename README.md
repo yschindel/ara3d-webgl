@@ -1,12 +1,12 @@
 # Ara 3D WebGL - BIM Open Schema Viewer
 
-## [Demo](https://ara3d.github.io/ara3d-webgl/)
+## [Live Demo](https://ara3d.github.io/ara3d-webgl/)
 
 <img
   src="https://github.com/user-attachments/assets/99407018-c5d2-46b2-b602-7e4671c87860"
   alt="BIM Open Schema Viewer"
-  width="400"
-  height="314"
+  width="200"
+  height="157"
   align="right"
 />
 
