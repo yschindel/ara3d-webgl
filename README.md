@@ -2,6 +2,14 @@
 
 ## [Demo](https://ara3d.github.io/ara3d-webgl/)
 
+<img
+  src="https://github.com/user-attachments/assets/99407018-c5d2-46b2-b602-7e4671c87860"
+  alt="BIM Open Schema Viewer"
+  width="400"
+  height="314"
+  align="right"
+/>
+
 A **WebGL viewer** for extremely large 3D models of buildings and infrastructure 
 represented as [BIM Open Schema .BOS files](https://github.com/ara3d/bim-open-schema).
 
@@ -9,8 +17,6 @@ BIM Open Schema is an ultra-compressed and portable BIM data format, which
 is easily extended, built on top [Parquet](https://parquet.apache.org/) format.
 A .BOS file is a ZIP archive that contains multiple Parquet files, which contain
 geometry, parameters, and other BIM data. 
-
-<img width="400" height="314" alt="image" src="https://github.com/user-attachments/assets/99407018-c5d2-46b2-b602-7e4671c87860" />
 
 ## Building and Running 
 
