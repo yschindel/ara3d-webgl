@@ -51,6 +51,12 @@ export class Renderer
       this.needsUpdate = true
     })
     this.background = settings.background.color
+    this.applyRenderingSettings(settings)
+  }
+
+  applyRenderingSettings (settings: Settings) {
+    this.renderer.toneMapping = settings.rendering.toneMapping
+    this.renderer.toneMappingExposure = settings.rendering.toneMappingExposure
   }
 
   dispose () {

@@ -1,12 +1,12 @@
 {
-  "name": "ara3d-webgl",
-  "version": "1.3.0",
+  "name": "@yschindel/ara3d-webgl",
+  "version": "1.3.3",
   "description": "A 3D viewer designed for large architectural (BIM) models built on top of Three.JS.",
   "files": [
     "dist"
   ],
   "types": "./dist/types/index.d.ts",
-  "module": "/dist/ara3d-webgl.mjs",
+  "module": "dist/ara3d-webgl.mjs",
   "homepage": "https://github.com/ara3d/ara3d-webgl.git",
   "bugs": {
     "url": "https://github.com/ara3d/ara3d-webgl/issues"
@@ -20,11 +20,12 @@
   "scripts": {
     "dev": "vite --config vite.config.docs.js --host",
     "build:docs": "vite build --config vite.config.docs.js && npm run gentypes",
-    "build:lib": "vite build --config vite.config.lib.js && npm run gentypes",
+    "build:lib": "npx vite build --config vite.config.lib.js && npm run gentypes",
     "preview:docs": "vite preview --mode github --config vite.config.docs.js --host",
     "serve:docs": "http-server ./docs -o --host",
     "eslint": "eslint --ext .js,.ts src --fix",
-    "gentypes": "tsc --declaration --emitDeclarationOnly --outdir ./dist/types"
+    "gentypes": "tsc --declaration --emitDeclarationOnly --outdir ./dist/types",
+    "prepare": "npm run build:lib"
   },
   "devDependencies": {
     "@types/axios": "^0.14.0",
@@ -51,10 +52,8 @@
     "jszip": "^3.10.1",
     "ste-events": "^3.0.7",
     "ste-signals": "^3.0.9",
-    "ste-simple-events": "^3.0.7"
-  },
-  "peerDependencies": {
-    "three": ">=0.150.0"
+    "ste-simple-events": "^3.0.7",
+    "three": "^0.182.0"
   },
   "keywords": [
     "3d",

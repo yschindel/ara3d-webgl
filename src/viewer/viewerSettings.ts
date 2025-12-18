@@ -6,6 +6,33 @@ export type TextureEncoding = 'url' | 'base64' | undefined
 export { GizmoOptions } from './gizmos/gizmoAxes'
 
 /**
+ * Example: Neutral lighting setup for color calibration or asset review
+ * 
+ * ```typescript
+ * const neutralSettings = {
+ *   skylight: {
+ *     intensity: 0  // Disable hemisphere light for neutral lighting
+ *   },
+ *   ambientLight: {
+ *     color: new THREE.Color(0xffffff),
+ *     intensity: 0.5  // Base level of even illumination
+ *   },
+ *   sunLights: [
+ *     {
+ *       position: new THREE.Vector3(5, 10, 7.5),
+ *       color: new THREE.Color(0xffffff),
+ *       intensity: 1  // Primary directional light
+ *     }
+ *   ],
+ *   rendering: {
+ *     toneMapping: THREE.ACESFilmicToneMapping,
+ *     toneMappingExposure: 1.0
+ *   }
+ * }
+ * ```
+ */
+
+/**
  * Makes all field optional recursively
  * https://stackoverflow.com/questions/41980195/recursive-partialt-in-typescript
  */
@@ -100,10 +127,20 @@ export type Settings = {
   }
   /**
    * Skylight (hemisphere light) options
+   * Used for natural lighting with sky/ground color variation
    */
   skylight: {
     skyColor: THREE.Color
     groundColor: THREE.Color
+    intensity: number
+  }
+
+  /**
+   * Ambient light options
+   * Used for neutral lighting setup (even illumination without color casts)
+   */
+  ambientLight: {
+    color: THREE.Color
     intensity: number
   }
 
@@ -118,6 +155,15 @@ export type Settings = {
 
   rendering: {
     onDemand: boolean
+    /**
+     * Tone mapping mode for the renderer
+     * ACESFilmicToneMapping is recommended for realistic results and wider dynamic range
+     */
+    toneMapping: THREE.ToneMapping
+    /**
+     * Tone mapping exposure value
+     */
+    toneMappingExposure: number
   }
 }
 
@@ -146,9 +192,9 @@ const defaultConfig: Settings = {
     },
 
     gizmo: {
-      enable: true,
+      enable: false,
       size: 0.01,
-      color: new THREE.Color(0xff, 0xff, 0xff),
+      color: new THREE.Color(0xffffff),
       opacity: 0.5,
       opacityAlways: 0.125
     }
@@ -159,13 +205,17 @@ const defaultConfig: Settings = {
     encoding: 'base64',
     texture: floor,
     opacity: 1,
-    color: new THREE.Color(0xff, 0xff, 0xff),
+    color: new THREE.Color(0xffffff),
     size: 5
   },
   skylight: {
     skyColor: new THREE.Color().setHSL(0.6, 1, 0.6),
     groundColor: new THREE.Color().setHSL(0.095, 1, 0.75),
     intensity: 0.8
+  },
+  ambientLight: {
+    color: new THREE.Color(0xffffff),
+    intensity: 0.5
   },
   sunLights: [
     {
@@ -180,12 +230,119 @@ const defaultConfig: Settings = {
     }
   ],
   rendering: {
-    onDemand: true
+    onDemand: true,
+    toneMapping: THREE.ACESFilmicToneMapping,
+    toneMappingExposure: 1.0
   }
 }
 
+/**
+ * Check if a value is a THREE.js class instance that should not be merged
+ */
+function isThreeClassInstance (value: unknown): boolean {
+  return value instanceof THREE.Color ||
+         value instanceof THREE.Vector3 ||
+         value instanceof THREE.Vector2 ||
+         value instanceof THREE.Quaternion ||
+         value instanceof THREE.Euler ||
+         value instanceof THREE.Matrix4
+}
+
+/**
+ * Ensure a value is a proper THREE.Color instance.
+ * deepmerge may convert Color instances to plain objects, so we restore them.
+ */
+function ensureColor (value: unknown): THREE.Color {
+  if (value instanceof THREE.Color) {
+    return value
+  }
+  // Handle plain objects that were Color instances before deepmerge
+  if (value && typeof value === 'object' && 'r' in value && 'g' in value && 'b' in value) {
+    const c = value as { r: number; g: number; b: number }
+    return new THREE.Color(c.r, c.g, c.b)
+  }
+  // Fallback to white
+  return new THREE.Color(1, 1, 1)
+}
+
+/**
+ * Ensure a value is a proper THREE.Vector3 instance.
+ */
+function ensureVector3 (value: unknown): THREE.Vector3 {
+  if (value instanceof THREE.Vector3) {
+    return value
+  }
+  if (value && typeof value === 'object' && 'x' in value && 'y' in value && 'z' in value) {
+    const v = value as { x: number; y: number; z: number }
+    return new THREE.Vector3(v.x, v.y, v.z)
+  }
+  return new THREE.Vector3()
+}
+
+/**
+ * Ensure a value is a proper THREE.Vector2 instance.
+ */
+function ensureVector2 (value: unknown): THREE.Vector2 {
+  if (value instanceof THREE.Vector2) {
+    return value
+  }
+  if (value && typeof value === 'object' && 'x' in value && 'y' in value) {
+    const v = value as { x: number; y: number }
+    return new THREE.Vector2(v.x, v.y)
+  }
+  return new THREE.Vector2()
+}
+
+/**
+ * Restore THREE class instances that deepmerge may have converted to plain objects
+ */
+function restoreThreeInstances (settings: Settings): Settings {
+  // Camera
+  settings.camera.allowedMovement = ensureVector3(settings.camera.allowedMovement)
+  settings.camera.allowedRotation = ensureVector2(settings.camera.allowedRotation)
+  settings.camera.forward = ensureVector3(settings.camera.forward)
+  settings.camera.gizmo.color = ensureColor(settings.camera.gizmo.color)
+
+  // Background
+  settings.background.color = ensureColor(settings.background.color)
+
+  // Ground plane
+  settings.groundPlane.color = ensureColor(settings.groundPlane.color)
+
+  // Skylight
+  settings.skylight.skyColor = ensureColor(settings.skylight.skyColor)
+  settings.skylight.groundColor = ensureColor(settings.skylight.groundColor)
+
+  // Ambient light
+  settings.ambientLight.color = ensureColor(settings.ambientLight.color)
+
+  // Sunlights
+  settings.sunLights = settings.sunLights.map(light => ({
+    ...light,
+    position: ensureVector3(light.position),
+    color: ensureColor(light.color)
+  }))
+
+  return settings
+}
+
 export function getSettings (options?: PartialSettings) {
-  return options
-    ? (deepmerge(defaultConfig, options, undefined) as Settings)
-    : (defaultConfig as Settings)
+  if (!options) {
+    return defaultConfig as Settings
+  }
+
+  // Use deepmerge with custom options to better handle THREE class instances
+  const merged = deepmerge(defaultConfig, options, {
+    // Don't merge THREE class instances - prefer the source value
+    isMergeableObject: (value) => {
+      if (isThreeClassInstance(value)) {
+        return false
+      }
+      // Default behavior: merge plain objects
+      return value !== null && typeof value === 'object' && !Array.isArray(value)
+    }
+  }) as Settings
+
+  // Restore any THREE instances that may have been converted to plain objects
+  return restoreThreeInstances(merged)
 }
