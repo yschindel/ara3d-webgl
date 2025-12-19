@@ -55,9 +55,23 @@ export async function loadBimGeometryFromZip(zip: JSZip): Promise<BimGeometry>
     }});
   }
 
+  // Read string columns from parquet table
+  async function readParquetTableStrings(name: string, bimObject: any, columnName: string) {
+    const entryName = findFileEndingWith(name);
+    const file = await zip.files[entryName].async('arraybuffer');
+    const metadata = await parquetMetadataAsync(file);
+    await parquetRead({file, compressors, metadata, onChunk(chunk: ColumnData) {
+      if (chunk.columnName === columnName) {
+        // String columns come as arrays of strings
+        bimObject[chunk.columnName] = chunk.columnData;
+      }
+    }});
+  }
+
   console.time("Reading parquet tables");
   const bim = {}
   await readParquetTable('Instances.parquet', bim, Int32Array);
+  await readParquetTableStrings('Instances.parquet', bim, 'InstanceGlobalId');
   await readParquetTable('VertexBuffer.parquet', bim, Int32Array);
   await readParquetTable('IndexBuffer.parquet', bim, Uint32Array);
   await readParquetTable('Meshes.parquet', bim, Int32Array);

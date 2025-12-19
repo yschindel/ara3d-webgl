@@ -6,5 +6,6 @@ export { DefaultInputScheme, KEYS } from './viewer/inputs/input'
 export * from './viewer/viewerSettings'
 export * from './loader/gltfLoader'
 export * from './loader/bimOpenSchemaLoader'
+export { BimGhostController } from './loader/bimGhostController'
 
 

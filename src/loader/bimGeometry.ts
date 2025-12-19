@@ -16,6 +16,10 @@ export interface BimGeometry
   // Index of the transform associated with each instance
   InstanceTransformIndex: Int32Array;
 
+  // GlobalId for each instance (for isolation/ghosting by ID)
+  // Optional for backward compatibility with older BOS files
+  InstanceGlobalId?: string[];
+
   //========================================
   // VertexBuffer table
   //========================================

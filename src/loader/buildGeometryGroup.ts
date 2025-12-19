@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BimGeometry } from './bimGeometry';
+import { createGhostableMaterial } from './ghostMaterial';
 
 type InstanceGroup = {
   meshIndex: number;
@@ -48,11 +49,68 @@ export function buildGeometry(bim: BimGeometry): THREE.Group
 
   console.log("Total polygon count = %d", polyCount);
 
+  // Build mappings for ghosting/isolation
+  buildGhostingMappings(bim, root);
+
   // Convert Z-Up to Y-Up 
   root.rotation.x = -Math.PI / 2;
 
   console.timeEnd("Building geometry");
   return root;
+}
+
+type InstanceRef =
+  | { kind: 'instanced'; mesh: THREE.InstancedMesh; subIndex: number }
+  | { kind: 'mesh'; mesh: THREE.Mesh };
+
+function buildGhostingMappings(bim: BimGeometry, root: THREE.Group): void {
+  // Build globalId -> entityIndex mapping
+  const globalIdToEntityIndex = new Map<string, number>();
+  if (bim.InstanceGlobalId && bim.InstanceGlobalId.length > 0) {
+    for (let i = 0; i < bim.InstanceGlobalId.length; i++) {
+      const globalId = bim.InstanceGlobalId[i];
+      const entityIndex = bim.InstanceEntityIndex[i];
+      if (globalId && entityIndex >= 0) {
+        globalIdToEntityIndex.set(globalId, entityIndex);
+      }
+    }
+  }
+
+  // Build entityIndex -> instance refs mapping
+  const entityToInstances = new Map<number, InstanceRef[]>();
+  
+  root.traverse(obj => {
+    if (obj instanceof THREE.InstancedMesh) {
+      const entityIndices = (obj.userData as any).entityIndices as Int32Array | undefined;
+      if (!entityIndices) return;
+      
+      for (let i = 0; i < entityIndices.length; i++) {
+        const entityIndex = entityIndices[i];
+        if (entityIndex < 0) continue;
+        
+        let list = entityToInstances.get(entityIndex);
+        if (!list) {
+          list = [];
+          entityToInstances.set(entityIndex, list);
+        }
+        list.push({ kind: 'instanced', mesh: obj, subIndex: i });
+      }
+    } else if (obj instanceof THREE.Mesh) {
+      const entityIndex = (obj.userData as any).entityIndex as number | undefined;
+      if (entityIndex === undefined || entityIndex < 0) return;
+      
+      let list = entityToInstances.get(entityIndex);
+      if (!list) {
+        list = [];
+        entityToInstances.set(entityIndex, list);
+      }
+      list.push({ kind: 'mesh', mesh: obj });
+    }
+  });
+
+  // Store mappings in root userData
+  (root.userData as any).globalIdToEntityIndex = globalIdToEntityIndex;
+  (root.userData as any).entityToInstances = entityToInstances;
 }
 
 export function createMergedAndSingleMeshes(
@@ -63,7 +121,6 @@ export function createMergedAndSingleMeshes(
   materialGroups: Map<number, number[]>)
   : Array<THREE.Mesh>
 {
-  const identity = new THREE.Matrix4();
   const r: THREE.Mesh[] = [];
   
   for (const [materialIndex, entries] of materialGroups) 
@@ -71,38 +128,22 @@ export function createMergedAndSingleMeshes(
     if (!entries || entries.length === 0) 
       continue;
 
-    const material = materials[materialIndex];
-
-    if (entries.length === 1) {
-      const ii = entries[0];
-      const meshIndex = bim.InstanceMeshIndex[ii];
-      const transformIndex = bim.InstanceTransformIndex[ii];
-      const geom = geometries[meshIndex];
-      const matrix = transforms[transformIndex];
-      const mesh = new THREE.Mesh(geom, material);
-      mesh.matrixAutoUpdate = false;
-      mesh.matrix.copy(matrix); 
-      r.push(mesh);
-      continue;
-    }
-
-    const geomsToMerge: THREE.BufferGeometry[] = [];
-
     for (const ii of entries) {
       const meshIndex = bim.InstanceMeshIndex[ii];
       const transformIndex = bim.InstanceTransformIndex[ii];
+      const entityIndex = bim.InstanceEntityIndex[ii];
       const geom = geometries[meshIndex];
       const matrix = transforms[transformIndex];
-      if (!matrix.equals(identity)) {
-        geom.applyMatrix4(matrix);
-      }
-      geomsToMerge.push(geom);
+      const baseMaterial = materials[materialIndex] as THREE.MeshStandardMaterial;
+      const material = baseMaterial.clone();
+      material.transparent = true;
+      const mesh = new THREE.Mesh(geom, material);
+      mesh.matrixAutoUpdate = false;
+      mesh.matrix.copy(matrix);
+      (mesh.userData as any).entityIndex = entityIndex;
+      (mesh.userData as any).instanceIndex = ii;
+      r.push(mesh);
     }
-
-    const mergedGeometry = mergeGeometries(geomsToMerge);
-    const mergedMesh = new THREE.Mesh(mergedGeometry, material);
-    mergedMesh.name = `MergedStatic_Material_${materialIndex}`;
-    r.push(mergedMesh);
   }
 
   return r;
@@ -339,20 +380,33 @@ export function createInstances(
     if (count <= 1)
       continue;
 
-    const geom = geometries[meshIndex];
-    const material = materials[materialIndex];
+    // Clone geometry so each InstancedMesh has its own instanceOpacity attribute
+    const baseGeom = geometries[meshIndex];
+    const geom = baseGeom.clone();
+    const baseMaterial = materials[materialIndex] as THREE.MeshStandardMaterial;
+    const material = createGhostableMaterial(baseMaterial);
  
     const instanced = new THREE.InstancedMesh(geom, material, count);
     instanced.instanceMatrix.setUsage(THREE.StaticDrawUsage);
 
+    // Store entity indices for each instance
+    const entityIndices = new Int32Array(count);
     for (let i = 0; i < count; i++) {
-      const ei = instanceIndices[i];
-      const ti = bim.InstanceTransformIndex[ei];
+      const ii = instanceIndices[i];
+      const ti = bim.InstanceTransformIndex[ii];
+      const entityIndex = bim.InstanceEntityIndex[ii];
       instanced.setMatrixAt(i, transforms[ti]);
+      entityIndices[i] = entityIndex;
     }
+
+    // Add instanceOpacity attribute (default 1.0 for full opacity)
+    const instanceOpacity = new Float32Array(count);
+    instanceOpacity.fill(1.0);
+    geom.setAttribute('instanceOpacity', new THREE.InstancedBufferAttribute(instanceOpacity, 1));
 
     (instanced.userData as any).meshIndex = meshIndex;
     (instanced.userData as any).materialIndex = materialIndex;
+    (instanced.userData as any).entityIndices = entityIndices;
     instanced.frustumCulled = false;
     instanced.matrixAutoUpdate = false;
     instanced.matrixWorldNeedsUpdate = false;
