@@ -55,6 +55,7 @@ export class Renderer
   }
 
   applyRenderingSettings (settings: Settings) {
+    this.renderer.outputColorSpace = settings.rendering.outputColorSpace;
     this.renderer.toneMapping = settings.rendering.toneMapping
     this.renderer.toneMappingExposure = settings.rendering.toneMappingExposure
   }

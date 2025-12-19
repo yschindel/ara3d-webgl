@@ -164,6 +164,10 @@ export type Settings = {
      * Tone mapping exposure value
      */
     toneMappingExposure: number
+    /**
+     * Output color space for the renderer
+     */
+    outputColorSpace: THREE.ColorSpace
   }
 }
 
@@ -231,8 +235,9 @@ const defaultConfig: Settings = {
   ],
   rendering: {
     onDemand: true,
-    toneMapping: THREE.ACESFilmicToneMapping,
-    toneMappingExposure: 1.0
+    toneMapping: THREE.NoToneMapping,
+    toneMappingExposure: 1.0,
+    outputColorSpace: THREE.SRGBColorSpace
   }
 }
 
