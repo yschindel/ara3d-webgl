@@ -107,7 +107,7 @@ export type Settings = {
    * Rendering background options
    */
   background: {
-    color: THREE.Color
+    color: THREE.Color | null
   }
   /**
    * Plane under scene related options
@@ -303,8 +303,10 @@ function restoreThreeInstances (settings: Settings): Settings {
   settings.camera.forward = ensureVector3(settings.camera.forward)
   settings.camera.gizmo.color = ensureColor(settings.camera.gizmo.color)
 
-  // Background
-  settings.background.color = ensureColor(settings.background.color)
+  // Background - preserve null for transparent backgrounds
+  if (settings.background.color !== null && settings.background.color !== undefined) {
+    settings.background.color = ensureColor(settings.background.color)
+  }
 
   // Ground plane
   settings.groundPlane.color = ensureColor(settings.groundPlane.color)

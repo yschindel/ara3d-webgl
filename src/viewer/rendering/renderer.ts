@@ -70,8 +70,15 @@ export class Renderer
     return this.scene.background
   }
 
-  set background (color: THREE.Color | THREE.Texture) {
+  set background (color: THREE.Color | THREE.Texture | null) {
     this.scene.background = color
+    if (color === null) {
+      // Set clear color to transparent when background is null
+      this.renderer.setClearColor(0x000000, 0)
+    } else {
+      // Reset to default clear behavior when background is set
+      this.renderer.setClearColor(0x000000, 1)
+    }
     this.needsUpdate = true
   }
 
