@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BOS Category Colors - External Mapping Pattern</title>
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* Simple overlay controls */
+    .ui {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 9999;
+      background: rgba(20,20,20,0.85);
+      color: #fff;
+      padding: 12px 12px 10px;
+      border-radius: 10px;
+      font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      min-width: 280px;
+      user-select: none;
+    }
+    .ui h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; }
+    .ui .description { 
+      opacity: 0.7; 
+      font-size: 11px; 
+      margin-bottom: 12px; 
+      line-height: 1.4;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 10px;
+    }
+    .row { display: grid; grid-template-columns: 90px 1fr 50px; gap: 8px; align-items: center; margin: 6px 0; }
+    .row label { opacity: 0.9; }
+    .row input[type="range"] { width: 100%; }
+    .val { text-align: right; opacity: 0.9; font-variant-numeric: tabular-nums; }
+    .btns { display: flex; gap: 8px; margin-top: 8px; }
+    button {
+      background: #2b6cb0;
+      border: 0;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:active { transform: translateY(1px); }
+    .stats {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 11px;
+      opacity: 0.7;
+    }
+    .stats div { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <div class="ui" id="ui">
+    <h3>Category Color Mapping</h3>
+    <div class="description">
+      This example demonstrates the <strong>external color mapping pattern</strong>.<br>
+      Categories are used here, but the same approach works with any data source:<br>
+      levels, zones, analysis results, etc.
+    </div>
+
+    <div class="row">
+      <label for="sat">Saturation</label>
+      <input id="sat" type="range" min="0" max="1" step="0.01" value="0.45">
+      <div class="val" id="satVal">0.45</div>
+    </div>
+
+    <div class="row">
+      <label for="lit">Lightness</label>
+      <input id="lit" type="range" min="0" max="1" step="0.01" value="0.20">
+      <div class="val" id="litVal">0.20</div>
+    </div>
+
+    <div class="row">
+      <label for="seed">Seed Hue</label>
+      <input id="seed" type="range" min="0" max="1" step="0.001" value="0.10">
+      <div class="val" id="seedVal">0.100</div>
+    </div>
+
+    <div class="btns">
+      <button id="shuffle">Shuffle</button>
+      <button id="reset">Reset</button>
+    </div>
+
+    <div class="stats" id="stats">
+      <div>Categories: <span id="categoryCount">-</span></div>
+      <div>Instances: <span id="instanceCount">-</span></div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as ARA3D from '../src/index';
+    import * as THREE from 'three';
+
+    // =======================================================================
+    // EXTERNAL COLOR MAPPING PATTERN
+    // =======================================================================
+    // This example demonstrates how to color BIM elements using an externally-
+    // provided mapping of globalId -> Material.
+    //
+    // In this example, we use CATEGORIES to build the mapping. However, the
+    // same pattern works with ANY external data source:
+    //
+    //   - Levels from your own database
+    //   - Zones/areas from facility management systems
+    //   - Analysis results (energy, cost, structural, etc.)
+    //   - Selection states
+    //   - Any other classification you compute externally
+    //
+    // KEY INSIGHT: The viewer doesn't care WHERE the mapping comes from.
+    // It only needs: Map<globalId, THREE.Material>
+    //
+    // This approach keeps data processing separate from the viewer, allowing
+    // external applications to handle all grouping logic.
+    // =======================================================================
+
+    // =======================================================================
+    // ACCESSING INSTANCE DATA VIA RESOLVER
+    // =======================================================================
+    // Use bimData.Resolver for a stable interface to access instance data.
+    // This provides consistent access even if the underlying schema changes.
+    //
+    // Key methods:
+    //   - Resolver.GetInstanceGlobalId(instance) -> string
+    //   - Resolver.GetInstanceCategoryName(instance) -> string
+    //   - Resolver.GetInstanceTypeName(instance) -> string
+    //   - Resolver.GetInstanceName(instance) -> string
+    // =======================================================================
+
+    // =======================================================================
+    // GROUPING LOGIC - This would typically be done externally
+    // =======================================================================
+    // In a real application, this grouping would happen outside the viewer.
+    // The viewer would just receive the final mapping.
+    //
+    // NOTE: This is just ONE way to build a grouping. Your application
+    // could use levels, zones, custom attributes, or any other logic.
+    // =======================================================================
+
+    /**
+     * Group instances by category using the Resolver.
+     * Returns: Map<categoryName, Instance[]>
+     */
+    function groupInstancesByCategory(bimData) {
+      const categoryToInstances = new Map();
+      const resolver = bimData.Resolver;
+      
+      for (const instance of bimData.Instances) {
+        const category = resolver.GetInstanceCategoryName(instance);
+        
+        if (!categoryToInstances.has(category)) {
+          categoryToInstances.set(category, []);
+        }
+        categoryToInstances.get(category).push(instance);
+      }
+      
+      return categoryToInstances;
+    }
+
+    // =======================================================================
+    // APPLICATION STATE
+    // =======================================================================
+
+    const paletteState = {
+      saturation: 0.9,
+      lightness: 0.50,
+      seedHue: 0.10,
+    };
+
+    const PHI = 0.618033988749895; // Golden ratio for color distribution
+
+    let viewer = null;
+    let bimData = null;
+    let categoryToInstances = null;
+    let currentGroup = null;
+
+    // =======================================================================
+    // MATERIAL GENERATION
+    // =======================================================================
+
+    /**
+     * Generate a unique material for each key in the map.
+     * Uses golden ratio to distribute hues evenly.
+     */
+    function generateMaterialsForGroups(groupMap, { saturation, lightness, seedHue }) {
+      const materials = new Map();
+      let hue = seedHue;
+
+      for (const key of groupMap.keys()) {
+        hue = (hue + PHI) % 1.0;
+        const color = new THREE.Color().setHSL(hue, saturation, lightness);
+
+        const material = new THREE.MeshStandardMaterial({
+          color,
+          roughness: 1,
+          metalness: 0.0,
+          flatShading: true,
+          side: THREE.DoubleSide,
+        });
+
+        materials.set(key, material);
+      }
+
+      return materials;
+    }
+
+    // =======================================================================
+    // GEOMETRY REBUILD - The core pattern
+    // =======================================================================
+
+    /**
+     * Build instances with materials applied based on the grouping.
+     * 
+     * This is the KEY PATTERN:
+     * 1. For each instance, look up its group (category in this example)
+     * 2. Get the material for that group
+     * 3. Create a new instance with the material attached
+     */
+    function buildColoredInstances() {
+      const resolver = bimData.Resolver;
+      
+      // Step 1: Generate materials for each category
+      const categoryMaterials = generateMaterialsForGroups(categoryToInstances, paletteState);
+
+      // Step 2: Build the globalId -> Material mapping
+      // NOTE: In an external application, you would receive this mapping directly
+      // instead of building it here from categories.
+      const globalIdToMaterial = new Map();
+      
+      for (const [category, instances] of categoryToInstances) {
+        const material = categoryMaterials.get(category);
+        for (const instance of instances) {
+          const globalId = resolver.GetInstanceGlobalId(instance);
+          globalIdToMaterial.set(globalId, material);
+        }
+      }
+
+      // Step 3: Apply the mapping to create colored instances
+      // This is all the viewer needs to do - apply a Map<globalId, Material>
+      const coloredInstances = [];
+      for (const instance of bimData.Instances) {
+        const globalId = resolver.GetInstanceGlobalId(instance);
+        const material = globalIdToMaterial.get(globalId);
+        
+        // Clone instance with new material (avoids mutating original)
+        coloredInstances.push({ ...instance, material });
+      }
+
+      return coloredInstances;
+    }
+
+    /**
+     * Rebuild the scene geometry with the current color mapping.
+     */
+    function rebuildSceneGeometry() {
+      if (!viewer || !bimData || !categoryToInstances) return;
+
+      // Remove previous group if present
+      if (currentGroup) {
+        viewer.remove?.(currentGroup);
+        currentGroup = null;
+      }
+
+      // Build colored instances and create new geometry
+      const instances = buildColoredInstances();
+      currentGroup = bimData.rebuildGeometry(instances);
+      viewer.add(currentGroup);
+    }
+
+    // =======================================================================
+    // UI HELPERS
+    // =======================================================================
+
+    function debounce(fn, ms) {
+      let t = null;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), ms);
+      };
+    }
+
+    const rebuildDebounced = debounce(rebuildSceneGeometry, 60);
+
+    function setText(id, txt) { 
+      document.getElementById(id).textContent = txt; 
+    }
+
+    function syncUI() {
+      document.getElementById('sat').value = String(paletteState.saturation);
+      document.getElementById('lit').value = String(paletteState.lightness);
+      document.getElementById('seed').value = String(paletteState.seedHue);
+
+      setText('satVal', paletteState.saturation.toFixed(2));
+      setText('litVal', paletteState.lightness.toFixed(2));
+      setText('seedVal', paletteState.seedHue.toFixed(3));
+    }
+
+    function bindUI() {
+      const sat = document.getElementById('sat');
+      const lit = document.getElementById('lit');
+      const seed = document.getElementById('seed');
+      const shuffle = document.getElementById('shuffle');
+      const reset = document.getElementById('reset');
+
+      sat.addEventListener('input', () => {
+        paletteState.saturation = Number(sat.value);
+        setText('satVal', paletteState.saturation.toFixed(2));
+        rebuildDebounced();
+      });
+
+      lit.addEventListener('input', () => {
+        paletteState.lightness = Number(lit.value);
+        setText('litVal', paletteState.lightness.toFixed(2));
+        rebuildDebounced();
+      });
+
+      seed.addEventListener('input', () => {
+        paletteState.seedHue = Number(seed.value);
+        setText('seedVal', paletteState.seedHue.toFixed(3));
+        rebuildDebounced();
+      });
+
+      shuffle.addEventListener('click', () => {
+        paletteState.seedHue = Math.random();
+        syncUI();
+        rebuildSceneGeometry();
+      });
+
+      reset.addEventListener('click', () => {
+        paletteState.saturation = 0.9;
+        paletteState.lightness = 0.50;
+        paletteState.seedHue = 0.10;
+        syncUI();
+        rebuildSceneGeometry();
+      });
+    }
+
+    function updateStats() {
+      if (categoryToInstances && bimData) {
+        setText('categoryCount', categoryToInstances.size);
+        setText('instanceCount', bimData.Instances.length);
+      }
+    }
+
+    // =======================================================================
+    // MAIN ENTRY POINT
+    // =======================================================================
+
+    async function runExample() {
+      viewer = new ARA3D.Viewer();
+      const loader = new ARA3D.BimOpenSchemaLoader();
+
+      console.time('Loading .bos file');
+      bimData = await loader.load('/ara3d-webgl/Snowdon Towers Sample Architectural.bos');
+      console.timeEnd('Loading .bos file');
+
+      // =======================================================================
+      // GROUPING STEP
+      // =======================================================================
+      // In this example, we group by Category using data from the Entities table.
+      // 
+      // In your application, you would:
+      // 1. Perform your own grouping logic externally
+      // 2. Build a Map<globalId, Material> or Map<globalId, groupName>
+      // 3. Pass that mapping to the viewer
+      //
+      // The viewer only needs the final mapping - it doesn't need to know
+      // how you computed it.
+      // =======================================================================
+      
+      console.time('Grouping instances by category');
+      categoryToInstances = groupInstancesByCategory(bimData);
+      console.timeEnd('Grouping instances by category');
+      
+      console.log(`Found ${categoryToInstances.size} categories:`);
+      for (const [category, instances] of categoryToInstances) {
+        console.log(`  - ${category}: ${instances.length} instances`);
+      }
+
+      // Setup UI
+      syncUI();
+      bindUI();
+      updateStats();
+
+      // Initial render with colors
+      rebuildSceneGeometry();
+    }
+
+    runExample();
+  </script>
+</body>
+</html>

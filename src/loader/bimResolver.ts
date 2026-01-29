@@ -19,15 +19,20 @@ export class BimResolver
         this.InstanceCount = this.BimGeometry.InstanceEntityIndex.length;
         this.EntityCount = this.Entities.Category.length;
         this.Descriptors = Data.Descriptors;
-        this.DescriptorCount = this.Descriptors.Name.length;
-
-        console.time("Computing parameters");
+        this.DescriptorCount = this.Descriptors?.Name?.length ?? 0;
+        
+        // Auto-detect if parameters are available and process them
+        // When loaded with skipParameters: true, these will be null
         this.ParameterMap = new Map<EntityIndex, Array<Parameter>>();
-        this.ProcessParameters(Data.IntegerParameters);
-        this.ProcessParameters(Data.SingleParameters);
-        this.ProcessParameters(Data.StringParameters);
-        this.ProcessParameters(Data.EntityParameters);
-        console.timeEnd("Computing parameters");
+        
+        if (Data.Descriptors && Data.IntegerParameters) {
+            console.time("Computing parameters");
+            this.ProcessParameters(Data.IntegerParameters);
+            this.ProcessParameters(Data.SingleParameters);
+            this.ProcessParameters(Data.StringParameters);
+            this.ProcessParameters(Data.EntityParameters);
+            console.timeEnd("Computing parameters");
+        }
     }
 
     GetVal(rawVal: number, descType: number): any
@@ -41,8 +46,10 @@ export class BimResolver
         return rawVal;
     }
 
-    ProcessParameters(table: BimParameterTable)
+    ProcessParameters(table: BimParameterTable | null)
     {
+        if (!table?.Value) return;
+        
         for (let i=0; i < table.Value.length; i++)
         {
             let descIndex = table.Descriptor[i];
@@ -66,7 +73,7 @@ export class BimResolver
         }
     }
 
-    readonly Descriptors: BimParameterDescriptors;
+    readonly Descriptors: BimParameterDescriptors | null;
     readonly Strings: Array<string>;
     readonly Entities: BimEntities;
     readonly InstanceCount: number;
@@ -75,6 +82,9 @@ export class BimResolver
     readonly DescriptorCount: number;
     
     readonly ParameterMap: Map<EntityIndex, Array<Parameter>>;
+    
+    /** Returns true if parameters were loaded and processed */
+    get HasParameters(): boolean { return this.DescriptorCount > 0; }
 
     GetString(stringIndex: StringIndex): string { return this.Strings[stringIndex]; }
 
@@ -85,19 +95,24 @@ export class BimResolver
     GetEntityTypeName(i: EntityIndex): string { return this.GetEntityName(this.GetEntityType(i)); }
     GetEntityDocument(i: EntityIndex): EntityIndex { return this.Entities.Type[i]; }
     GetEntityDocumentName(i: EntityIndex): string { return this.GetEntityName(this.GetEntityDocument(i)); }
-    GetEntityParameters(i: EntityIndex): Array<Parameter> { return this.ParameterMap.get(i); }
+    GetEntityParameters(i: EntityIndex): Array<Parameter> | undefined { return this.ParameterMap.get(i); }
 
     GetInstanceName(i: Instance): string { return this.GetEntityName(i.entity); }
     GetInstanceCategoryName(i: Instance): string { return this.GetEntityCategoryName(i.entity); }
     GetInstanceTypeName(i: Instance): string { return this.GetEntityTypeName(i.entity); }
     GetInstanceDocumentName(i: Instance): string { return this.GetEntityDocumentName(i.entity); }
     GetInstanceGlobalId(i: Instance): string { return this.GetString(this.Entities.GlobalId[i.entity]); }
-    GetInstanceParameters(i: Instance): Array<Parameter> { return this.GetEntityParameters(i.entity); }
+    GetInstanceParameters(i: Instance): Array<Parameter> | undefined { return this.GetEntityParameters(i.entity); }
 
-    GetDescriptorName(i: DescriptorIndex): string { return this.GetString(this.Descriptors.Name[i]); }
-    GetDescriptorType(i: DescriptorIndex): number { return this.Descriptors.Type[i]; }
-    GetDescriptorGroup(i: DescriptorIndex): string { return this.GetString(this.Descriptors.Group[i]); }
-    GetDescriptorUnits(i: DescriptorIndex): string { return this.GetString(this.Descriptors.Units[i]); }
+    // =======================================================================
+    // DESCRIPTOR AND PARAMETER METHODS
+    // =======================================================================
+
+    // Descriptor methods - return null/0 if parameters weren't loaded
+    GetDescriptorName(i: DescriptorIndex): string | null { return this.Descriptors ? this.GetString(this.Descriptors.Name[i]) : null; }
+    GetDescriptorType(i: DescriptorIndex): number { return this.Descriptors?.Type[i] ?? 0; }
+    GetDescriptorGroup(i: DescriptorIndex): string | null { return this.Descriptors ? this.GetString(this.Descriptors.Group[i]) : null; }
+    GetDescriptorUnits(i: DescriptorIndex): string | null { return this.Descriptors ? this.GetString(this.Descriptors.Units[i]) : null; }
 
     *EntityIndices(): Iterable<EntityIndex> { for (let i = 0; i < this.EntityCount; i++) yield i as EntityIndex; }
     *InstanceIndices(): Iterable<InstanceIndex> { for (let i = 0; i < this.InstanceCount; i++) yield i as InstanceIndex; }
@@ -109,5 +124,8 @@ export class BimResolver
         return _default;
     }
 
-    FindDescriptor(name: string): DescriptorIndex { return this.first(this.DescriptorIndices(), i => this.GetDescriptorName(i) == name, -1 as DescriptorIndex); }
+    FindDescriptor(name: string): DescriptorIndex { 
+        if (!this.Descriptors) return -1 as DescriptorIndex;
+        return this.first(this.DescriptorIndices(), i => this.GetDescriptorName(i) == name, -1 as DescriptorIndex); 
+    }
 }

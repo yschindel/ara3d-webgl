@@ -17,20 +17,26 @@ export type DescriptorIndex = number & { __brand: "InstanceIndex" };
 // Contains the BIM data loaded from Parquet, and the THREE geometry 
 export class BimData 
 {
+    // Core geometry data (always loaded)
     BimGeometry: BimGeometry;
     Entities: BimEntities;
     Strings: Array<string>;
     ThreeGeometry: THREE.Group;
-    Resolver: BimResolver;
-    Query: BimQuery;
     Instances: Array<Instance>;
     
-    Descriptors: BimParameterDescriptors
-    IntegerParameters: BimParameterTable;
-    StringParameters: BimParameterTable;
-    EntityParameters: BimParameterTable;
-    SingleParameters: BimParameterTable;
-    PointParameters: BimParameterTable;
+    // Query/Resolver are always available
+    // They auto-detect if parameters were loaded and adjust behavior accordingly
+    // Use Resolver.HasParameters to check if parameter methods will return data
+    Resolver: BimResolver;
+    Query: BimQuery;
+    
+    // Parameter data (null when loaded with skipParameters: true)
+    Descriptors: BimParameterDescriptors | null = null;
+    IntegerParameters: BimParameterTable | null = null;
+    StringParameters: BimParameterTable | null = null;
+    EntityParameters: BimParameterTable | null = null;
+    SingleParameters: BimParameterTable | null = null;
+    PointParameters: BimParameterTable | null = null;
 
     rebuildGeometry(instances: Instance[]): THREE.Group
     {
