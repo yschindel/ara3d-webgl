@@ -7,18 +7,18 @@
     ],
     "types": "./dist/types/index.d.ts",
     "module": "/dist/ara3d-webgl.mjs",
-    "homepage": "https://github.com/ara3d/ara3d-webgl.git",
+    "homepage": "https://github.com/yschindel/ara3d-webgl.git",
     "bugs": {
-        "url": "https://github.com/ara3d/ara3d-webgl/issues"
+        "url": "https://github.com/yschindel/ara3d-webgl/issues"
     },
     "license": "MIT",
-    "author": "Ara 3D <info@ara3d.com>",
+    "author": "Yssentyl Technologies <contact@yssentyl.com>",
     "publishConfig": {
         "access": "public"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/ara3d/ara3d-webgl.git"
+        "url": "git+https://github.com/yschindel/ara3d-webgl.git"
     },
     "scripts": {
         "dev": "vite --config vite.config.docs.js --host",
