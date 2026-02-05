@@ -4,7 +4,6 @@ import { BimGeometry } from './bimGeometry';
 import { BimParameterDescriptors } from './BimParameterDescriptors';
 import { BimParameterTable } from './BimParameterTable';
 import { Instance } from './buildInstances';
-import { BosLoaderOptions } from './bimOpenSchemaLoader';
 
 // This class helps us efficiently look up data based on indices and a type-safe way. 
 
@@ -12,29 +11,30 @@ export type Parameter = { Name: string, Value: any }
 
 export class BimResolver 
 {
-    constructor(readonly Data: BimData, options?: BosLoaderOptions) 
+    constructor(readonly Data: BimData) 
     {
         this.Entities = Data.Entities ?? ({} as BimEntities);
         this.Strings = Data.Strings ?? [];
         this.BimGeometry = Data.BimGeometry;
-        this.InstanceCount = this.BimGeometry?.InstanceEntityIndex?.length ?? 0;
-        this.EntityCount = this.Entities?.Category?.length ?? 0;
-        this.Descriptors = options?.skipDescriptorsAndParameters
-            ? ({} as BimParameterDescriptors)
-            : (Data.Descriptors ?? ({} as BimParameterDescriptors));
-        this.DescriptorCount = options?.skipDescriptorsAndParameters
-            ? 0
-            : (this.Descriptors?.Name?.length ?? 0);
-
+        this.InstanceCount = this.BimGeometry.InstanceEntityIndex.length;
+        this.EntityCount = this.Entities.Category.length;
+        this.Descriptors = Data.Descriptors;
+        this.DescriptorCount = 0;
         this.ParameterMap = new Map<EntityIndex, Array<Parameter>>();
-        if (!options?.skipDescriptorsAndParameters) {
-            console.time("Computing parameters");
-            if (Data.IntegerParameters) this.ProcessParameters(Data.IntegerParameters);
-            if (Data.SingleParameters) this.ProcessParameters(Data.SingleParameters);
-            if (Data.StringParameters) this.ProcessParameters(Data.StringParameters);
-            if (Data.EntityParameters) this.ProcessParameters(Data.EntityParameters);
-            console.timeEnd("Computing parameters");
+        
+        // If there are no descriptors, we don't have to do parameter processing
+        if (!this.Descriptors)
+        {
+            return;
         }
+        
+        console.time("Computing parameters");
+        this.DescriptorCount = this.Descriptors.Name.length;
+        this.ProcessParameters(Data.IntegerParameters);
+        this.ProcessParameters(Data.SingleParameters);
+        this.ProcessParameters(Data.StringParameters);
+        this.ProcessParameters(Data.EntityParameters);
+        console.timeEnd("Computing parameters");
     }
 
     GetVal(rawVal: number, descType: number): any
