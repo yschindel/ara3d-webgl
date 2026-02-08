@@ -17,7 +17,7 @@ export class BimResolver
         this.Strings = Data.Strings ?? [];
         this.BimGeometry = Data.BimGeometry;
         this.InstanceCount = this.BimGeometry.InstanceEntityIndex.length;
-        this.EntityCount = this.Entities.Category.length;
+        this.EntityCount = this.Entities.Category == null ? 0 : this.Entities.Category.length;
         this.Descriptors = Data.Descriptors;
         this.DescriptorCount = 0;
         this.ParameterMap = new Map<EntityIndex, Array<Parameter>>();
@@ -35,6 +35,12 @@ export class BimResolver
         this.ProcessParameters(Data.StringParameters);
         this.ProcessParameters(Data.EntityParameters);
         console.timeEnd("Computing parameters");
+        let n = 0;
+        n = n + Data.IntegerParameters.Descriptor.length;
+        n = n + Data.SingleParameters.Descriptor.length;
+        n = n + Data.StringParameters.Descriptor.length;
+        n = n + Data.EntityParameters.Descriptor.length;
+        console.log("Found %d parameters and %d entitites", n, this.ParameterMap.size)
     }
 
     GetVal(rawVal: number, descType: number): any
