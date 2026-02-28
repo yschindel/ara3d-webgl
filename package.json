@@ -1,6 +1,6 @@
 {
     "name": "@yschindel/ara3d-webgl",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "A 3D viewer designed for large architectural (BIM) models built on top of Three.JS.",
     "files": [
         "dist"
