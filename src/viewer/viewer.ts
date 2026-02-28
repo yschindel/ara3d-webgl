@@ -7,6 +7,7 @@ import { Environment } from './environment';
 import { GizmoOrbit } from './gizmos/gizmoOrbit';
 import { Viewport } from './viewport';
 import { Renderer } from './rendering/renderer';
+import { perfDuration, perfLongTask, perfNow } from '../perf/perf';
 
 export class Viewer {
     settings: Settings;
@@ -88,10 +89,12 @@ export class Viewer {
         this.updateId = null;
         const dt = this.clock.getDelta();
         const camChanged = this.camera.update(dt);
+
         if (camChanged) {
             this.renderer.needsUpdate = true;
         }
         this.renderer.render();
+
         if (camChanged || this.renderer.needsUpdate) {
             this.requestRender();
         } else {
@@ -101,25 +104,36 @@ export class Viewer {
 
     // Mark scene dirty and schedule a render for new content.
     add(obj: THREE.Object3D, frameCamera = true) {
-        console.log('Adding object');
+        const startedAt = perfNow();
         this.renderer.needsUpdate = true;
         this.requestRender();
         if (!this.renderer.add(obj)) {
             throw new Error('Could not load object');
         }
+        perfDuration('viewer.add', startedAt, {
+            childCount: this.scene.children.length,
+            frameCamera,
+        });
     }
 
     remove(obj: THREE.Object3D) {
-        console.log('Removing object');
+        const startedAt = perfNow();
         this.renderer.needsUpdate = true;
         this.requestRender();
         this.renderer.remove(obj);
+        perfDuration('viewer.remove', startedAt, {
+            childCount: this.scene.children.length,
+        });
     }
 
     // Clear scene content and ensure a render happens for the empty state.
     clear() {
+        const startedAt = perfNow();
         this.renderer.clear();
         this.requestRender();
+        perfDuration('viewer.clear', startedAt, {
+            childCount: this.scene.children.length,
+        });
     }
 
     dispose() {
